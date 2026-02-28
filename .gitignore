@@ -1,0 +1,8 @@
+.antlr
+antlr4
+*.exe
+build
+out
+language.md
+*.tokens
+*.interp
