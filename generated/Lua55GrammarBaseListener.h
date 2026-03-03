@@ -112,9 +112,6 @@ public:
   virtual void enterFieldlist(Lua55GrammarParser::FieldlistContext * /*ctx*/) override { }
   virtual void exitFieldlist(Lua55GrammarParser::FieldlistContext * /*ctx*/) override { }
 
-  virtual void enterField_sep(Lua55GrammarParser::Field_sepContext * /*ctx*/) override { }
-  virtual void exitField_sep(Lua55GrammarParser::Field_sepContext * /*ctx*/) override { }
-
   virtual void enterField(Lua55GrammarParser::FieldContext * /*ctx*/) override { }
   virtual void exitField(Lua55GrammarParser::FieldContext * /*ctx*/) override { }
 

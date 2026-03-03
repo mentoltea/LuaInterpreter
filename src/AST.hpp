@@ -313,18 +313,21 @@ struct FuncAnon: public Expression {
 };
 
 
-struct TableConstr: public Expression {
-    std::vector< Field > fields;
-    Type type() const { return Type::TABLE_CONSTR; }
-};
-struct Field {
-    enum class Type {
+struct Field: public Node {
+    enum class Kind {
         INDEXED,
         NAMED,
-    } type;
+        SINGLE,
+    } kind;
 
-    std::shared_ptr<Expression> rhs;
+    std::string name;
+
     std::shared_ptr<Expression> lhs;
+    std::shared_ptr<Expression> rhs;
+};
+struct TableConstr: public Expression {
+    std::vector< std::shared_ptr<Field> > fields;
+    Type type() const { return Type::TABLE_CONSTR; }
 };
 
 struct Operation: public Expression {

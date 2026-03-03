@@ -15,13 +15,13 @@ public:
     T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, T__6 = 7, 
     T__7 = 8, T__8 = 9, T__9 = 10, T__10 = 11, T__11 = 12, T__12 = 13, T__13 = 14, 
     T__14 = 15, T__15 = 16, T__16 = 17, T__17 = 18, T__18 = 19, T__19 = 20, 
-    T__20 = 21, COMPOP = 22, SHIFTOP = 23, PLUSOP = 24, MULOP = 25, UNOP = 26, 
-    DO = 27, END = 28, AND = 29, OR = 30, NOT = 31, IF = 32, ELSEIF = 33, 
-    ELSE = 34, THEN = 35, WHILE = 36, REPEAT = 37, UNTIL = 38, FOR = 39, 
-    IN = 40, BREAK = 41, GOTO = 42, RETURN = 43, FUNCTION = 44, NIL = 45, 
-    TRUE = 46, FALSE = 47, LOCAL = 48, GLOBAL = 49, CONST = 50, NUMBER = 51, 
-    STRING = 52, UNTERMINATED_STRING = 53, ID = 54, WS = 55, LINE_COMMENT = 56, 
-    BLOCK_COMMENT = 57
+    T__20 = 21, FIELD_SEP = 22, COMPOP = 23, SHIFTOP = 24, PLUSOP = 25, 
+    MULOP = 26, UNOP = 27, DO = 28, END = 29, AND = 30, OR = 31, NOT = 32, 
+    IF = 33, ELSEIF = 34, ELSE = 35, THEN = 36, WHILE = 37, REPEAT = 38, 
+    UNTIL = 39, FOR = 40, IN = 41, BREAK = 42, GOTO = 43, RETURN = 44, FUNCTION = 45, 
+    NIL = 46, TRUE = 47, FALSE = 48, LOCAL = 49, GLOBAL = 50, CONST = 51, 
+    NUMBER = 52, STRING = 53, UNTERMINATED_STRING = 54, ID = 55, WS = 56, 
+    LINE_COMMENT = 57, BLOCK_COMMENT = 58
   };
 
   enum {
@@ -34,13 +34,13 @@ public:
     RuleIfStatement = 21, RuleNumericForStatement = 22, RuleGenericForStatement = 23, 
     RuleGotoStatement = 24, RuleLabelStatement = 25, RuleBreakStatement = 26, 
     RuleReturnStatement = 27, RuleFuncCallStatement = 28, RuleFuncAnon = 29, 
-    RuleTableConstructor = 30, RuleFieldlist = 31, RuleField_sep = 32, RuleField = 33, 
-    RuleExp = 34, RuleOpExp = 35, RuleOrExp = 36, RuleAndExp = 37, RuleCompExp = 38, 
-    RuleBitorExp = 39, RuleBitxorExp = 40, RuleBitandExp = 41, RuleShiftExp = 42, 
-    RuleConcatExp = 43, RulePlusExp = 44, RuleMulExp = 45, RuleUnaryExp = 46, 
-    RulePowExp = 47, RuleOpStartExp = 48, RuleLiteral = 49, RulePrefixexp = 50, 
-    RuleFuncCall = 51, RuleFuncCall_tail = 52, RuleArgs = 53, RuleVar = 54, 
-    RuleVar_tail = 55, RuleName = 56, RuleAttributes_defined = 57
+    RuleTableConstructor = 30, RuleFieldlist = 31, RuleField = 32, RuleExp = 33, 
+    RuleOpExp = 34, RuleOrExp = 35, RuleAndExp = 36, RuleCompExp = 37, RuleBitorExp = 38, 
+    RuleBitxorExp = 39, RuleBitandExp = 40, RuleShiftExp = 41, RuleConcatExp = 42, 
+    RulePlusExp = 43, RuleMulExp = 44, RuleUnaryExp = 45, RulePowExp = 46, 
+    RuleOpStartExp = 47, RuleLiteral = 48, RulePrefixexp = 49, RuleFuncCall = 50, 
+    RuleFuncCall_tail = 51, RuleArgs = 52, RuleVar = 53, RuleVar_tail = 54, 
+    RuleName = 55, RuleAttributes_defined = 56
   };
 
   explicit Lua55GrammarParser(antlr4::TokenStream *input);
@@ -92,7 +92,6 @@ public:
   class FuncAnonContext;
   class TableConstructorContext;
   class FieldlistContext;
-  class Field_sepContext;
   class FieldContext;
   class ExpContext;
   class OpExpContext;
@@ -598,8 +597,8 @@ public:
     virtual size_t getRuleIndex() const override;
     std::vector<FieldContext *> field();
     FieldContext* field(size_t i);
-    std::vector<Field_sepContext *> field_sep();
-    Field_sepContext* field_sep(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> FIELD_SEP();
+    antlr4::tree::TerminalNode* FIELD_SEP(size_t i);
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -607,18 +606,6 @@ public:
   };
 
   FieldlistContext* fieldlist();
-
-  class  Field_sepContext : public antlr4::ParserRuleContext {
-  public:
-    Field_sepContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-
-    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
-    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
-   
-  };
-
-  Field_sepContext* field_sep();
 
   class  FieldContext : public antlr4::ParserRuleContext {
   public:

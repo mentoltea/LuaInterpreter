@@ -137,10 +137,10 @@ funcCallStatement: funcCall ;
 funcAnon: FUNCTION funcbody;
 
 tableConstructor: '{' fieldlist '}' | '{' '}';
-fieldlist: field (field_sep field)* field_sep? ;
-field_sep: ',' | ';' ;
+fieldlist: field (FIELD_SEP field)* FIELD_SEP? ;
+FIELD_SEP: ',' | ';' ;
 field:
-    '[' exp ']' '=' exp 
+    '[' exp ']' '=' exp
     | name '=' exp
     | exp
 ;
