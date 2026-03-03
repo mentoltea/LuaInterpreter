@@ -281,31 +281,27 @@ struct Literal: public Expression {
     Type type() const { return Type::LITERAL; }
 
     virtual void print(std::ostream &os, int tabs = 0) const {
-        os << "LITERAL( ";
+        os << "literal( ";
         switch (kind) {
 
         case Kind::NIL: { os << "nil"; } break;
         case Kind::BOOLEAN: { 
-            os << "bool(";
             if (std::get<bool>(value)) os << "true";
             else os << "false"; 
-            os << ")"; 
         } break;
         case Kind::STRING: {
-            os << "str(" << std::get<std::string>(value) << ")";
+            os << std::get<std::string>(value);
         } break;
         case Kind::NUMBER: {
-            os << "num(";
             auto& num = std::get<Number>(value);
             if (num.kind == Number::Kind::INT) os << num.i; 
             else if (num.kind == Number::Kind::FLOAT) os << num.f; 
-            os << ")";
         } break;
         
         default:
             break;
         }    
-        os << " )" << std::endl;
+        os << " )";
     };
 };
 
@@ -345,12 +341,48 @@ struct Operation: public Expression {
 };
 
 
+
+struct VarPart: public Node {
+    enum class Kind {
+        NONE,
+
+        NAME,
+        EXP
+    } kind;
+};
+struct VarPartName: public VarPart {
+    std::string name;
+    VarPartName(std::string name): name(name) {}
+    void print(std::ostream &os, int tabs = 0) const {
+        os << ".";
+        os << name;
+    }
+};
+struct VarPartExp: public VarPart {
+    std::shared_ptr<Expression> exp;
+    VarPartExp(std::shared_ptr<Expression> exp): exp(exp) {}
+    void print(std::ostream &os, int tabs = 0) const {
+        os << "[";
+        exp->print(os, tabs);
+        os << "]";
+    }
+};
+
 struct Var: public Expression {
-    std::shared_ptr<Expression> base;
-    std::vector< std::shared_ptr<Expression> > specifications;
+    std::shared_ptr<VarPart> base;
+    std::vector<
+        std::shared_ptr<VarPart> 
+    > specifications;
 
     Type type() const { return Type::VAR; }
+    void print(std::ostream &os, int tabs = 0) const {
+        base->print(os, tabs);
+        for (auto &spec: specifications) {
+            spec->print(os, tabs);
+        }
+    }
 };
+
 
 struct FuncCall: public Expression {
     std::shared_ptr<Expression> function;

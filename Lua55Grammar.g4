@@ -2,25 +2,98 @@ grammar Lua55Grammar;
 
 prog: block EOF ;
 
+// chunk ::= block
+// block ::= {stat} [retstat]
 block: (statement ';'? )* (returnStatement ';'? )?;
 
-statement: 
-    doBlockStatement
+statement:
+// stat ::=  ‘;’ | 
+    emptyStatement
+//         do block end | 
+    | doBlockStatement
+//         varlist ‘=’ explist | 
     | assignmentStatement
+//         local attnamelist [‘=’ explist] | 
+//         global attnamelist | 
     | declarationStatement
+//         global [attrib] ‘*’ 
     | globalAttribStatement
+//         function funcname funcbody | 
+//         local function Name funcbody | 
+//         global function Name funcbody | 
     | funcdefStatement
+//         while exp do block end | 
     | whileStatement
+//         repeat block until exp | 
     | repeatStatement
+//         if exp then block {elseif exp then block} [else block] end | 
     | ifStatement
+//         for Name ‘=’ exp ‘,’ exp [‘,’ exp] do block end | 
     | numericForStatement
+//         for namelist in explist do block end | 
     | genericForStatement
+//         goto Name | 
     | gotoStatement
+//         label | 
     | labelStatement
+//         break | 
     | breakStatement
+//         functioncall | 
     | funcCallStatement
 ;
 
+emptyStatement: ';';
+
+
+// attnamelist ::=  [attrib] Name [attrib] {‘,’ Name [attrib]}
+
+// attrib ::= ‘<’ Name ‘>’
+
+// retstat ::= return [explist] [‘;’]
+
+// label ::= ‘::’ Name ‘::’
+
+// funcname ::= Name {‘.’ Name} [‘:’ Name]
+
+// varlist ::= var {‘,’ var}
+
+// var ::=  Name | prefixexp ‘[’ exp ‘]’ | prefixexp ‘.’ Name 
+
+// namelist ::= Name {‘,’ Name}
+
+// explist ::= exp {‘,’ exp}
+
+// exp ::=  nil | false | true | Numeral | LiteralString | ‘...’ | functiondef | 
+//         prefixexp | tableconstructor | exp binop exp | unop exp 
+
+// prefixexp ::= var | functioncall | ‘(’ exp ‘)’
+
+// functioncall ::=  prefixexp args | prefixexp ‘:’ Name args 
+
+// args ::=  ‘(’ [explist] ‘)’ | tableconstructor | LiteralString 
+
+// functiondef ::= function funcbody
+
+// funcbody ::= ‘(’ [parlist] ‘)’ block end
+
+// parlist ::= namelist [‘,’ varargparam] | varargparam
+
+// varargparam ::= ‘...’ [Name]
+
+// tableconstructor ::= ‘{’ [fieldlist] ‘}’
+
+// fieldlist ::= field {fieldsep field} [fieldsep]
+
+// field ::= ‘[’ exp ‘]’ ‘=’ exp | Name ‘=’ exp | exp
+
+// fieldsep ::= ‘,’ | ‘;’
+
+// binop ::=  ‘+’ | ‘-’ | ‘*’ | ‘/’ | ‘//’ | ‘^’ | ‘%’ | 
+//         ‘&’ | ‘~’ | ‘|’ | ‘>>’ | ‘<<’ | ‘..’ | 
+//         ‘<’ | ‘<=’ | ‘>’ | ‘>=’ | ‘==’ | ‘~=’ | 
+//         and | or
+
+// unop ::= ‘-’ | not | ‘#’ | ‘~’
 doBlockStatement: DO block END ;
 
 assignmentStatement: varlist '=' explist ;
@@ -37,7 +110,10 @@ attrib: '<' attributes_defined '>' ;
 
 scopeSpec: GLOBAL | LOCAL;
 
-funcdefStatement: scopeSpec? funcname funcbody ;
+funcdefStatement: 
+    FUNCTION funcname funcbody 
+    | scopeSpec name funcbody
+;
 funcname: name ('.' name)* (':' name)? ;
 funcbody: '(' paramlist? ')' block END ;
 
@@ -118,15 +194,16 @@ prefixexp:
 ;
 
 // get_func()(1,2,3)()
-// (funcs[69]):new(1,2,3)
+// (objects[69]):new(1,2,3)
+//
 funcCall: 
-    var funcCall_tail
-    | '(' exp ')' funcCall_tail
+    var (funcCall_tail)+
+    | '(' exp ')' (funcCall_tail)+
 ;
 
 funcCall_tail: 
-    args funcCall_tail?
-    | ':' name args funcCall_tail?
+    args
+    | ':' name args
 ;
 
 args: '(' explist? ')' ;
@@ -135,13 +212,13 @@ args: '(' explist? ')' ;
 // (obj1 + obj2).field
 // (func())["result"]
 var: 
-    name var_tail?
-    | '(' exp ')' var_tail
+    name (var_tail)*
+    | '(' exp ')' (var_tail)+
 ;
 
 var_tail:
-    '[' exp ']' var_tail?
-    | '.' name var_tail?
+    '[' exp ']'
+    | '.' name
 ;
 
 name: ID;

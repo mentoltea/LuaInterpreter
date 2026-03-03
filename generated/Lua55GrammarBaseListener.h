@@ -25,6 +25,9 @@ public:
   virtual void enterStatement(Lua55GrammarParser::StatementContext * /*ctx*/) override { }
   virtual void exitStatement(Lua55GrammarParser::StatementContext * /*ctx*/) override { }
 
+  virtual void enterEmptyStatement(Lua55GrammarParser::EmptyStatementContext * /*ctx*/) override { }
+  virtual void exitEmptyStatement(Lua55GrammarParser::EmptyStatementContext * /*ctx*/) override { }
+
   virtual void enterDoBlockStatement(Lua55GrammarParser::DoBlockStatementContext * /*ctx*/) override { }
   virtual void exitDoBlockStatement(Lua55GrammarParser::DoBlockStatementContext * /*ctx*/) override { }
 

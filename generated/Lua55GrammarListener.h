@@ -23,6 +23,9 @@ public:
   virtual void enterStatement(Lua55GrammarParser::StatementContext *ctx) = 0;
   virtual void exitStatement(Lua55GrammarParser::StatementContext *ctx) = 0;
 
+  virtual void enterEmptyStatement(Lua55GrammarParser::EmptyStatementContext *ctx) = 0;
+  virtual void exitEmptyStatement(Lua55GrammarParser::EmptyStatementContext *ctx) = 0;
+
   virtual void enterDoBlockStatement(Lua55GrammarParser::DoBlockStatementContext *ctx) = 0;
   virtual void exitDoBlockStatement(Lua55GrammarParser::DoBlockStatementContext *ctx) = 0;
 

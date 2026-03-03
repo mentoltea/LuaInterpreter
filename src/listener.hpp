@@ -9,7 +9,7 @@ using namespace LuaAST;
 class Lua55Listener: public Lua55GrammarBaseListener {
     
     struct State {
-        std::stack< std::shared_ptr< Node > > stack;
+        std::stack< Node* > stack;
     } state;
     
     public:
@@ -180,9 +180,8 @@ class Lua55Listener: public Lua55GrammarBaseListener {
     virtual void enterUnop(Lua55GrammarParser::UnopContext * ctx) override { }
     virtual void exitUnop(Lua55GrammarParser::UnopContext * ctx) override { }
     
-    virtual void enterLiteral(Lua55GrammarParser::LiteralContext * ctx) override { }
     virtual void exitLiteral(Lua55GrammarParser::LiteralContext * ctx) override { 
-        std::shared_ptr<Literal> lit(new Literal);
+        Literal* lit = new Literal;
         
         if (ctx->NIL()) {
             lit->kind = Literal::Kind::NIL;
@@ -221,6 +220,8 @@ class Lua55Listener: public Lua55GrammarBaseListener {
         }
 
         lit->print(std::cout);
+        std::cout<<std::endl;
+        state.stack.push(lit);
     }
     
     virtual void enterPrefixexp(Lua55GrammarParser::PrefixexpContext * ctx) override { }
@@ -230,20 +231,67 @@ class Lua55Listener: public Lua55GrammarBaseListener {
     virtual void exitFuncCall(Lua55GrammarParser::FuncCallContext * ctx) override { }
     
     virtual void enterFuncCall_tail(Lua55GrammarParser::FuncCall_tailContext * ctx) override { }
-    virtual void exitFuncCall_tail(Lua55GrammarParser::FuncCall_tailContext * ctx) override { }
+    virtual void exitFuncCall_tail(Lua55GrammarParser::FuncCall_tailContext * ctx) override {
+
+    }
     
     virtual void enterArgs(Lua55GrammarParser::ArgsContext * ctx) override { }
     virtual void exitArgs(Lua55GrammarParser::ArgsContext * ctx) override { }
     
     virtual void enterVar(Lua55GrammarParser::VarContext * ctx) override { }
     virtual void exitVar(Lua55GrammarParser::VarContext * ctx) override {
-        std::cout << "VAR( ";
-        std::cout << ctx->toStringTree();
-        std::cout << " )" << std::endl;;
+        Var* var = new Var;
+
+        size_t n = ctx->var_tail().size();
+        std::stack< VarPart* > parts;
+        for (size_t i=0; i<n; i++) {
+            parts.push( (VarPart*) state.stack.top() );
+            state.stack.pop();
+        }
+        for (size_t i=0; i<n; i++) {
+            var->specifications.push_back(
+                std::shared_ptr<VarPart>(parts.top())
+            );
+            parts.pop();
+        }
+        
+        if (ctx->name()) {
+            var->base.reset(new VarPartName(ctx->name()->ID()->toString()));
+            var->base->kind = VarPart::Kind::NAME;
+        } else {
+            std::shared_ptr<Expression> exp( (Expression*) state.stack.top() ); 
+            state.stack.pop();
+
+            var->base.reset(new VarPartExp(exp));
+            var->base->kind = VarPart::Kind::EXP;
+        }
+
+        std::cout << "Var: ";
+        var->print(std::cout);
+        std::cout << std::endl;
+        state.stack.push(var);
     }
     
     virtual void enterVar_tail(Lua55GrammarParser::Var_tailContext * ctx) override { }
-    virtual void exitVar_tail(Lua55GrammarParser::Var_tailContext * ctx) override { }
+    virtual void exitVar_tail(Lua55GrammarParser::Var_tailContext * ctx) override {
+        VarPart* part;
+
+        if (ctx->name()) {
+            part = new VarPartName(ctx->name()->ID()->toString());
+            std::cout << "VarPartName: " << ctx->name()->ID()->toString() << std::endl;
+            part->kind = VarPart::Kind::NAME;
+        } else {
+            std::shared_ptr<Expression> exp( (Expression*) state.stack.top() ); 
+            state.stack.pop();
+            std::cout << "VarPartExp: ";
+            exp->print(std::cout);
+            std::cout << std::endl;
+            
+            part = new VarPartExp(exp);
+            part->kind = VarPart::Kind::EXP;
+        }
+        state.stack.push(part);
+    }
     
     virtual void enterName(Lua55GrammarParser::NameContext * ctx) override { }
     virtual void exitName(Lua55GrammarParser::NameContext * ctx) override {
