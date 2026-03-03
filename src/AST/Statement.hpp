@@ -55,9 +55,9 @@ struct Statement: public Node {
         RETURN,
     };
 
-    std::weak_ptr<Block> parent;
-    std::weak_ptr<Statement> prev;
-    std::weak_ptr<Statement> next;
+    Block* parent;
+    Statement* prev;
+    Statement* next;
 
     virtual Type type() const = 0;
 };
@@ -70,7 +70,7 @@ enum class ScopeSpec {
 struct Block: public Node {
     std::vector< std::shared_ptr<Statement> > statements;
 
-    std::weak_ptr<Statement> parent;
+    Statement* parent;
     
     virtual void print(std::ostream &os, int tabs = 0) const override {
         for (auto ptr: statements) {
@@ -113,19 +113,36 @@ struct AttribSt: public Statement {
 
 struct Attribute {
     enum class Kind {
-        CONST
+        CONST,
     } kind;
+    Attribute(const std::string& str) {
+        if (str == "CONST") kind = Kind::CONST;
+        else {
+            throw std::runtime_error("Unexpected attribute: " + str);
+        }
+    }
 };
 
 struct FuncdefSt: public Statement {
-    ScopeSpec scope;
-    std::shared_ptr< FuncName > name;
+    enum class Kind {
+        DEFAULT,
+        SCOPED,
+    } kind;
     std::shared_ptr< FuncBody > body;
 
     Type type() const { return Type::FUNCDEF; }
 };
 
-struct FuncName {
+struct DefaultFuncdefSt: public FuncdefSt {
+    std::shared_ptr<FuncName> name;
+};
+
+struct ScopedFuncdefSt: public FuncdefSt {
+    ScopeSpec scope;
+    std::string name;
+};
+
+struct FuncName: public Node {
     std::string base;
     // .x.y.z
     std::vector< std::string > specifications;
@@ -203,7 +220,7 @@ struct BreakSt: public Statement {
 };
 
 struct FunccallSt: public Statement {
-    std::shared_ptr< FuncCall> funccall;
+    std::shared_ptr< FuncCall > funccall;
 
     Type type() const { return Type::FUNCCALL; }
 };

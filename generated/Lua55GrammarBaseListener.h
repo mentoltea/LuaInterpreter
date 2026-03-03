@@ -49,6 +49,9 @@ public:
   virtual void enterAttnamelist(Lua55GrammarParser::AttnamelistContext * /*ctx*/) override { }
   virtual void exitAttnamelist(Lua55GrammarParser::AttnamelistContext * /*ctx*/) override { }
 
+  virtual void enterNameattr(Lua55GrammarParser::NameattrContext * /*ctx*/) override { }
+  virtual void exitNameattr(Lua55GrammarParser::NameattrContext * /*ctx*/) override { }
+
   virtual void enterAttrib(Lua55GrammarParser::AttribContext * /*ctx*/) override { }
   virtual void exitAttrib(Lua55GrammarParser::AttribContext * /*ctx*/) override { }
 
@@ -183,9 +186,6 @@ public:
 
   virtual void enterName(Lua55GrammarParser::NameContext * /*ctx*/) override { }
   virtual void exitName(Lua55GrammarParser::NameContext * /*ctx*/) override { }
-
-  virtual void enterAttributes_defined(Lua55GrammarParser::Attributes_definedContext * /*ctx*/) override { }
-  virtual void exitAttributes_defined(Lua55GrammarParser::Attributes_definedContext * /*ctx*/) override { }
 
 
   virtual void enterEveryRule(antlr4::ParserRuleContext * /*ctx*/) override { }

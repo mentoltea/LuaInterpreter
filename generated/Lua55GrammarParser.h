@@ -16,31 +16,31 @@ public:
     T__7 = 8, T__8 = 9, T__9 = 10, T__10 = 11, T__11 = 12, T__12 = 13, T__13 = 14, 
     T__14 = 15, T__15 = 16, T__16 = 17, T__17 = 18, T__18 = 19, T__19 = 20, 
     T__20 = 21, FIELD_SEP = 22, COMPOP = 23, SHIFTOP = 24, PLUSOP = 25, 
-    MULOP = 26, UNOP = 27, DO = 28, END = 29, AND = 30, OR = 31, NOT = 32, 
-    IF = 33, ELSEIF = 34, ELSE = 35, THEN = 36, WHILE = 37, REPEAT = 38, 
-    UNTIL = 39, FOR = 40, IN = 41, BREAK = 42, GOTO = 43, RETURN = 44, FUNCTION = 45, 
-    NIL = 46, TRUE = 47, FALSE = 48, LOCAL = 49, GLOBAL = 50, CONST = 51, 
-    NUMBER = 52, STRING = 53, UNTERMINATED_STRING = 54, ID = 55, WS = 56, 
-    LINE_COMMENT = 57, BLOCK_COMMENT = 58
+    MULOP = 26, UNOP = 27, ATTRIBUTES_DEFINED = 28, DO = 29, END = 30, AND = 31, 
+    OR = 32, NOT = 33, IF = 34, ELSEIF = 35, ELSE = 36, THEN = 37, WHILE = 38, 
+    REPEAT = 39, UNTIL = 40, FOR = 41, IN = 42, BREAK = 43, GOTO = 44, RETURN = 45, 
+    FUNCTION = 46, NIL = 47, TRUE = 48, FALSE = 49, LOCAL = 50, GLOBAL = 51, 
+    CONST = 52, NUMBER = 53, STRING = 54, UNTERMINATED_STRING = 55, ID = 56, 
+    WS = 57, LINE_COMMENT = 58, BLOCK_COMMENT = 59
   };
 
   enum {
     RuleProg = 0, RuleBlock = 1, RuleStatement = 2, RuleEmptyStatement = 3, 
     RuleDoBlockStatement = 4, RuleAssignmentStatement = 5, RuleVarlist = 6, 
     RuleExplist = 7, RuleDeclarationStatement = 8, RuleGlobalAttribStatement = 9, 
-    RuleAttnamelist = 10, RuleAttrib = 11, RuleScopeSpec = 12, RuleFuncdefStatement = 13, 
-    RuleFuncname = 14, RuleFuncbody = 15, RuleParamlist = 16, RuleVararg = 17, 
-    RuleNamelist = 18, RuleWhileStatement = 19, RuleRepeatStatement = 20, 
-    RuleIfStatement = 21, RuleNumericForStatement = 22, RuleGenericForStatement = 23, 
-    RuleGotoStatement = 24, RuleLabelStatement = 25, RuleBreakStatement = 26, 
-    RuleReturnStatement = 27, RuleFuncCallStatement = 28, RuleFuncAnon = 29, 
-    RuleTableConstructor = 30, RuleFieldlist = 31, RuleField = 32, RuleExp = 33, 
-    RuleOpExp = 34, RuleOrExp = 35, RuleAndExp = 36, RuleCompExp = 37, RuleBitorExp = 38, 
-    RuleBitxorExp = 39, RuleBitandExp = 40, RuleShiftExp = 41, RuleConcatExp = 42, 
-    RulePlusExp = 43, RuleMulExp = 44, RuleUnaryExp = 45, RulePowExp = 46, 
-    RuleOpStartExp = 47, RuleLiteral = 48, RulePrefixexp = 49, RuleFuncCall = 50, 
-    RuleFuncCall_tail = 51, RuleArgs = 52, RuleVar = 53, RuleVar_tail = 54, 
-    RuleName = 55, RuleAttributes_defined = 56
+    RuleAttnamelist = 10, RuleNameattr = 11, RuleAttrib = 12, RuleScopeSpec = 13, 
+    RuleFuncdefStatement = 14, RuleFuncname = 15, RuleFuncbody = 16, RuleParamlist = 17, 
+    RuleVararg = 18, RuleNamelist = 19, RuleWhileStatement = 20, RuleRepeatStatement = 21, 
+    RuleIfStatement = 22, RuleNumericForStatement = 23, RuleGenericForStatement = 24, 
+    RuleGotoStatement = 25, RuleLabelStatement = 26, RuleBreakStatement = 27, 
+    RuleReturnStatement = 28, RuleFuncCallStatement = 29, RuleFuncAnon = 30, 
+    RuleTableConstructor = 31, RuleFieldlist = 32, RuleField = 33, RuleExp = 34, 
+    RuleOpExp = 35, RuleOrExp = 36, RuleAndExp = 37, RuleCompExp = 38, RuleBitorExp = 39, 
+    RuleBitxorExp = 40, RuleBitandExp = 41, RuleShiftExp = 42, RuleConcatExp = 43, 
+    RulePlusExp = 44, RuleMulExp = 45, RuleUnaryExp = 46, RulePowExp = 47, 
+    RuleOpStartExp = 48, RuleLiteral = 49, RulePrefixexp = 50, RuleFuncCall = 51, 
+    RuleFuncCall_tail = 52, RuleArgs = 53, RuleVar = 54, RuleVar_tail = 55, 
+    RuleName = 56
   };
 
   explicit Lua55GrammarParser(antlr4::TokenStream *input);
@@ -71,6 +71,7 @@ public:
   class DeclarationStatementContext;
   class GlobalAttribStatementContext;
   class AttnamelistContext;
+  class NameattrContext;
   class AttribContext;
   class ScopeSpecContext;
   class FuncdefStatementContext;
@@ -115,8 +116,7 @@ public:
   class ArgsContext;
   class VarContext;
   class Var_tailContext;
-  class NameContext;
-  class Attributes_definedContext; 
+  class NameContext; 
 
   class  ProgContext : public antlr4::ParserRuleContext {
   public:
@@ -277,10 +277,8 @@ public:
   public:
     AttnamelistContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    std::vector<NameContext *> name();
-    NameContext* name(size_t i);
-    std::vector<AttribContext *> attrib();
-    AttribContext* attrib(size_t i);
+    std::vector<NameattrContext *> nameattr();
+    NameattrContext* nameattr(size_t i);
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -289,11 +287,25 @@ public:
 
   AttnamelistContext* attnamelist();
 
+  class  NameattrContext : public antlr4::ParserRuleContext {
+  public:
+    NameattrContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    NameContext *name();
+    AttribContext *attrib();
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+   
+  };
+
+  NameattrContext* nameattr();
+
   class  AttribContext : public antlr4::ParserRuleContext {
   public:
     AttribContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    Attributes_definedContext *attributes_defined();
+    antlr4::tree::TerminalNode *ATTRIBUTES_DEFINED();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -964,19 +976,6 @@ public:
   };
 
   NameContext* name();
-
-  class  Attributes_definedContext : public antlr4::ParserRuleContext {
-  public:
-    Attributes_definedContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *CONST();
-
-    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
-    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
-   
-  };
-
-  Attributes_definedContext* attributes_defined();
 
 
   // By default the static state used to implement the parser is lazily initialized during the first

@@ -47,6 +47,9 @@ public:
   virtual void enterAttnamelist(Lua55GrammarParser::AttnamelistContext *ctx) = 0;
   virtual void exitAttnamelist(Lua55GrammarParser::AttnamelistContext *ctx) = 0;
 
+  virtual void enterNameattr(Lua55GrammarParser::NameattrContext *ctx) = 0;
+  virtual void exitNameattr(Lua55GrammarParser::NameattrContext *ctx) = 0;
+
   virtual void enterAttrib(Lua55GrammarParser::AttribContext *ctx) = 0;
   virtual void exitAttrib(Lua55GrammarParser::AttribContext *ctx) = 0;
 
@@ -181,9 +184,6 @@ public:
 
   virtual void enterName(Lua55GrammarParser::NameContext *ctx) = 0;
   virtual void exitName(Lua55GrammarParser::NameContext *ctx) = 0;
-
-  virtual void enterAttributes_defined(Lua55GrammarParser::Attributes_definedContext *ctx) = 0;
-  virtual void exitAttributes_defined(Lua55GrammarParser::Attributes_definedContext *ctx) = 0;
 
 
 };

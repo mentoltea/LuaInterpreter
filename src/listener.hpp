@@ -10,6 +10,12 @@ class Lua55Listener: public Lua55GrammarBaseListener {
     
     struct State {
         std::stack< Node* > stack;
+
+        struct Frame {
+            Block* parent;
+            Statement* last;
+        };
+        std::stack< Frame > frames;
     } state;
     
     public:
@@ -18,41 +24,111 @@ class Lua55Listener: public Lua55GrammarBaseListener {
     virtual void enterProg(Lua55GrammarParser::ProgContext * ctx) override { }
     virtual void exitProg(Lua55GrammarParser::ProgContext * ctx) override { }
     
-    virtual void enterBlock(Lua55GrammarParser::BlockContext * ctx) override { }
-    virtual void exitBlock(Lua55GrammarParser::BlockContext * ctx) override { }
+    virtual void enterBlock(Lua55GrammarParser::BlockContext * ctx) override { 
+        Block* block = new Block;
+        State::Frame frame;
+        frame.parent = block;
+        state.frames.push(frame);
+    }
+    virtual void exitBlock(Lua55GrammarParser::BlockContext * ctx) override { 
+        State::Frame frame = state.frames.top();
+        state.frames.pop();
+        Block* block = frame.parent;
+
+        size_t n = ctx->statement().size();
+        if (ctx->returnStatement()) n += 1;
+
+        block->statements = std::vector< std::shared_ptr<Statement> >(n, nullptr);
+        for (size_t i=0; i<n; i++) {
+            block->statements[n-1-i] = std::shared_ptr<Statement>( (Statement*)state.stack.top() );
+            state.stack.pop();
+        }
+
+        state.stack.push(block);
+    }
     
     virtual void enterStatement(Lua55GrammarParser::StatementContext * ctx) override { }
-    virtual void exitStatement(Lua55GrammarParser::StatementContext * ctx) override { }
+    virtual void exitStatement(Lua55GrammarParser::StatementContext * ctx) override { 
+        Statement* st = (Statement*) state.stack.top();
+        State::Frame& frame = state.frames.top();
+        
+        st->parent = frame.parent;
+        if (frame.last) frame.last->next = st;
+        st->prev = frame.last;
+        frame.last = st;
+    }
     
-    virtual void enterDoBlockStatement(Lua55GrammarParser::DoBlockStatementContext * ctx) override { }
-    virtual void exitDoBlockStatement(Lua55GrammarParser::DoBlockStatementContext * ctx) override { }
+    virtual void exitDoBlockStatement(Lua55GrammarParser::DoBlockStatementContext * ctx) override { 
+        DoBlockSt* st = new DoBlockSt;
+
+        st->block = std::shared_ptr<Block>((Block*) state.stack.top());
+        state.stack.pop();
+        st->block->parent = st;
+
+        state.stack.push(st);
+    }
     
-    virtual void enterAssignmentStatement(Lua55GrammarParser::AssignmentStatementContext * ctx) override { }
-    virtual void exitAssignmentStatement(Lua55GrammarParser::AssignmentStatementContext * ctx) override { }
+    virtual void exitAssignmentStatement(Lua55GrammarParser::AssignmentStatementContext * ctx) override { 
+        size_t exp_n = ctx->explist()->exp().size();
+        size_t var_n = ctx->varlist()->var().size();
+        
+        AssignSt* st = new AssignSt;
+
+        st->rhs = std::vector< std::shared_ptr <Expression> >(exp_n, nullptr);
+        for (size_t i=0; i<exp_n; i++) {
+            st->rhs[exp_n-1-i] = std::shared_ptr<Expression>((Expression*) state.stack.top());
+            state.stack.pop();
+        }
+
+        st->lhs = std::vector< std::shared_ptr <Var> >(var_n, nullptr);
+        for (size_t i=0; i<var_n; i++) {
+            st->lhs[var_n-1-i] = std::shared_ptr<Var>((Var*) state.stack.top());
+            state.stack.pop();
+        }
+
+        state.stack.push(st);
+    }
+            
+    virtual void exitDeclarationStatement(Lua55GrammarParser::DeclarationStatementContext * ctx) override { 
+        DeclareSt* st = new DeclareSt;
+
+        if (ctx->scopeSpec()->GLOBAL()) st->scope = ScopeSpec::GLOBAL;
+        else st->scope = ScopeSpec::LOCAL;
+
+        if (ctx->attrib()) st->common_attr = std::shared_ptr<Attribute>(new Attribute(ctx->attrib()->ATTRIBUTES_DEFINED()->toString()));
+
+        size_t attr_n = ctx->attnamelist()->nameattr().size();
+        for (size_t i=0; i<attr_n; i++) {
+            auto nameattr = ctx->attnamelist()->nameattr(i);
+            std::string name = nameattr->name()->ID()->toString();
+            Attribute* attr = nullptr;
+            if (nameattr->attrib()) attr = new Attribute(nameattr->attrib()->ATTRIBUTES_DEFINED()->toString());
+            st->lhs.push_back(
+                {name, std::shared_ptr<Attribute>(attr)}
+            );
+        }
+
+        size_t exp_n = ctx->explist()->exp().size();
+        for (size_t i=0; i<exp_n; i++) {
+            st->rhs.push_back(
+                std::shared_ptr<Expression>( (Expression*) state.stack.top() )
+            );
+            state.stack.pop();
+        }
+
+        state.stack.push(st);
+    }
     
-    virtual void enterVarlist(Lua55GrammarParser::VarlistContext * ctx) override { }
-    virtual void exitVarlist(Lua55GrammarParser::VarlistContext * ctx) override { }
+    virtual void exitGlobalAttribStatement(Lua55GrammarParser::GlobalAttribStatementContext * ctx) override { 
+        AttribSt* st = new AttribSt;
+        st->attr = std::shared_ptr<Attribute>(new Attribute(ctx->attrib()->ATTRIBUTES_DEFINED()->toString()));
+        state.stack.push(st);
+    }
     
-    virtual void enterExplist(Lua55GrammarParser::ExplistContext * ctx) override { }
-    virtual void exitExplist(Lua55GrammarParser::ExplistContext * ctx) override { }
-    
-    virtual void enterDeclarationStatement(Lua55GrammarParser::DeclarationStatementContext * ctx) override { }
-    virtual void exitDeclarationStatement(Lua55GrammarParser::DeclarationStatementContext * ctx) override { }
-    
-    virtual void enterGlobalAttribStatement(Lua55GrammarParser::GlobalAttribStatementContext * ctx) override { }
-    virtual void exitGlobalAttribStatement(Lua55GrammarParser::GlobalAttribStatementContext * ctx) override { }
-    
-    virtual void enterAttnamelist(Lua55GrammarParser::AttnamelistContext * ctx) override { }
-    virtual void exitAttnamelist(Lua55GrammarParser::AttnamelistContext * ctx) override { }
-    
-    virtual void enterAttrib(Lua55GrammarParser::AttribContext * ctx) override { }
-    virtual void exitAttrib(Lua55GrammarParser::AttribContext * ctx) override { }
-    
-    virtual void enterScopeSpec(Lua55GrammarParser::ScopeSpecContext * ctx) override { }
-    virtual void exitScopeSpec(Lua55GrammarParser::ScopeSpecContext * ctx) override { }
-    
-    virtual void enterFuncdefStatement(Lua55GrammarParser::FuncdefStatementContext * ctx) override { }
-    virtual void exitFuncdefStatement(Lua55GrammarParser::FuncdefStatementContext * ctx) override { }
+    virtual void exitFuncdefStatement(Lua55GrammarParser::FuncdefStatementContext * ctx) override { 
+        FuncdefSt* st = new FuncdefSt;
+        #error
+    }
     
     virtual void enterFuncname(Lua55GrammarParser::FuncnameContext * ctx) override { }
     virtual void exitFuncname(Lua55GrammarParser::FuncnameContext * ctx) override { }
@@ -116,8 +192,9 @@ class Lua55Listener: public Lua55GrammarBaseListener {
     virtual void enterReturnStatement(Lua55GrammarParser::ReturnStatementContext * ctx) override { }
     virtual void exitReturnStatement(Lua55GrammarParser::ReturnStatementContext * ctx) override { }
     
-    virtual void enterFuncCallStatement(Lua55GrammarParser::FuncCallStatementContext * ctx) override { }
-    virtual void exitFuncCallStatement(Lua55GrammarParser::FuncCallStatementContext * ctx) override { }
+    virtual void exitFuncCallStatement(Lua55GrammarParser::FuncCallStatementContext * ctx) override { 
+        FunccallSt *st = new FunccallSt;
+    }
     
     virtual void exitFuncAnon(Lua55GrammarParser::FuncAnonContext * ctx) override { 
         FuncAnon* func = new FuncAnon;
@@ -507,7 +584,6 @@ class Lua55Listener: public Lua55GrammarBaseListener {
         }
     }
     
-    
     virtual void exitLiteral(Lua55GrammarParser::LiteralContext * ctx) override { 
         Literal* lit = new Literal;
         
@@ -551,11 +627,7 @@ class Lua55Listener: public Lua55GrammarBaseListener {
         // std::cout<<std::endl;
         state.stack.push(lit);
     }
-    
-    virtual void enterPrefixexp(Lua55GrammarParser::PrefixexpContext * ctx) override { }
-    virtual void exitPrefixexp(Lua55GrammarParser::PrefixexpContext * ctx) override { }
-    
-    virtual void enterFuncCall(Lua55GrammarParser::FuncCallContext * ctx) override { }
+        
     virtual void exitFuncCall(Lua55GrammarParser::FuncCallContext * ctx) override {
         FuncCall* funccall = new FuncCall;
 
@@ -582,7 +654,6 @@ class Lua55Listener: public Lua55GrammarBaseListener {
         state.stack.push(funccall);
     }
     
-    virtual void enterFuncCall_tail(Lua55GrammarParser::FuncCall_tailContext * ctx) override { }
     virtual void exitFuncCall_tail(Lua55GrammarParser::FuncCall_tailContext * ctx) override {
         FuncCallTail* tail = new FuncCallTail;
         if (ctx->name()){
@@ -605,11 +676,7 @@ class Lua55Listener: public Lua55GrammarBaseListener {
         
         state.stack.push(tail);
     }
-    
-    virtual void enterArgs(Lua55GrammarParser::ArgsContext * ctx) override { }
-    virtual void exitArgs(Lua55GrammarParser::ArgsContext * ctx) override { }
-    
-    virtual void enterVar(Lua55GrammarParser::VarContext * ctx) override { }
+     
     virtual void exitVar(Lua55GrammarParser::VarContext * ctx) override {
         Var* var = new Var;
 
@@ -643,7 +710,6 @@ class Lua55Listener: public Lua55GrammarBaseListener {
         state.stack.push(var);
     }
     
-    virtual void enterVar_tail(Lua55GrammarParser::Var_tailContext * ctx) override { }
     virtual void exitVar_tail(Lua55GrammarParser::Var_tailContext * ctx) override {
         VarPart* part;
 
@@ -664,15 +730,11 @@ class Lua55Listener: public Lua55GrammarBaseListener {
         state.stack.push(part);
     }
     
-    virtual void enterName(Lua55GrammarParser::NameContext * ctx) override { }
     virtual void exitName(Lua55GrammarParser::NameContext * ctx) override {
         // std::cout << "NAME( ";
         // std::cout << ctx->ID()->toString();
         // std::cout << " )" << std::endl;;
     }
-    
-    virtual void enterAttributes_defined(Lua55GrammarParser::Attributes_definedContext * ctx) override { }
-    virtual void exitAttributes_defined(Lua55GrammarParser::Attributes_definedContext * ctx) override { }
 };
 
 }

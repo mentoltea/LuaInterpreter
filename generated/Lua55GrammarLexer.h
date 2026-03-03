@@ -16,12 +16,12 @@ public:
     T__7 = 8, T__8 = 9, T__9 = 10, T__10 = 11, T__11 = 12, T__12 = 13, T__13 = 14, 
     T__14 = 15, T__15 = 16, T__16 = 17, T__17 = 18, T__18 = 19, T__19 = 20, 
     T__20 = 21, FIELD_SEP = 22, COMPOP = 23, SHIFTOP = 24, PLUSOP = 25, 
-    MULOP = 26, UNOP = 27, DO = 28, END = 29, AND = 30, OR = 31, NOT = 32, 
-    IF = 33, ELSEIF = 34, ELSE = 35, THEN = 36, WHILE = 37, REPEAT = 38, 
-    UNTIL = 39, FOR = 40, IN = 41, BREAK = 42, GOTO = 43, RETURN = 44, FUNCTION = 45, 
-    NIL = 46, TRUE = 47, FALSE = 48, LOCAL = 49, GLOBAL = 50, CONST = 51, 
-    NUMBER = 52, STRING = 53, UNTERMINATED_STRING = 54, ID = 55, WS = 56, 
-    LINE_COMMENT = 57, BLOCK_COMMENT = 58
+    MULOP = 26, UNOP = 27, ATTRIBUTES_DEFINED = 28, DO = 29, END = 30, AND = 31, 
+    OR = 32, NOT = 33, IF = 34, ELSEIF = 35, ELSE = 36, THEN = 37, WHILE = 38, 
+    REPEAT = 39, UNTIL = 40, FOR = 41, IN = 42, BREAK = 43, GOTO = 44, RETURN = 45, 
+    FUNCTION = 46, NIL = 47, TRUE = 48, FALSE = 49, LOCAL = 50, GLOBAL = 51, 
+    CONST = 52, NUMBER = 53, STRING = 54, UNTERMINATED_STRING = 55, ID = 56, 
+    WS = 57, LINE_COMMENT = 58, BLOCK_COMMENT = 59
   };
 
   explicit Lua55GrammarLexer(antlr4::CharStream *input);

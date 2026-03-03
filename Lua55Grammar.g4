@@ -105,8 +105,9 @@ declarationStatement: scopeSpec attrib? attnamelist ('=' explist)? ;
 
 globalAttribStatement: GLOBAL attrib '*' ; 
 
-attnamelist: name attrib? (',' name attrib?)* ;
-attrib: '<' attributes_defined '>' ;
+attnamelist: nameattr (',' nameattr)* ;
+nameattr: name attrib? ;
+attrib: '<' ATTRIBUTES_DEFINED '>' ;
 
 scopeSpec: GLOBAL | LOCAL;
 
@@ -222,7 +223,7 @@ var_tail:
 ;
 
 name: ID;
-attributes_defined: CONST;
+ATTRIBUTES_DEFINED: CONST;
 
 
 // keywords
