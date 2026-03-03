@@ -6,3 +6,4 @@ out
 language.md
 *.tokens
 *.interp
+*.html
