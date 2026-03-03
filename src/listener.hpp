@@ -228,11 +228,54 @@ class Lua55Listener: public Lua55GrammarBaseListener {
     virtual void exitPrefixexp(Lua55GrammarParser::PrefixexpContext * ctx) override { }
     
     virtual void enterFuncCall(Lua55GrammarParser::FuncCallContext * ctx) override { }
-    virtual void exitFuncCall(Lua55GrammarParser::FuncCallContext * ctx) override { }
+    virtual void exitFuncCall(Lua55GrammarParser::FuncCallContext * ctx) override {
+        FuncCall* funccall = new FuncCall;
+
+        std::stack<FuncCallTail*> tails;
+        size_t n = ctx->funcCall_tail().size();
+        for (size_t i=0; i<n; i++) {
+            tails.push((FuncCallTail*) state.stack.top());
+            state.stack.pop();
+        }
+        for (size_t i=0; i<n; i++) {
+            funccall->tails.push_back(
+                std::shared_ptr<FuncCallTail>((FuncCallTail*) tails.top())
+            );
+            tails.pop();
+        }
+        
+        // var inherits from expr
+        funccall->function = std::shared_ptr<Expression>((Expression*) state.stack.top());
+        state.stack.pop();
+
+        std::cout << "funccall( ";
+        funccall->print(std::cout);
+        std::cout << " )" << std::endl;
+        state.stack.push(funccall);
+    }
     
     virtual void enterFuncCall_tail(Lua55GrammarParser::FuncCall_tailContext * ctx) override { }
     virtual void exitFuncCall_tail(Lua55GrammarParser::FuncCall_tailContext * ctx) override {
-
+        FuncCallTail* tail = new FuncCallTail;
+        if (ctx->name()){
+            tail->name = ctx->name()->ID()->toString();
+        }
+        if (ctx->args()->explist()) {
+            size_t n = ctx->args()->explist()->exp().size();
+            std::stack<Expression*> temp;
+            for (size_t i=0; i<n; i++) {
+                temp.push((Expression*)state.stack.top());
+                state.stack.pop();
+            }
+            for (size_t i=0; i<n; i++) {
+                tail->args.push_back(
+                    std::shared_ptr<Expression>((Expression*)temp.top())
+                );
+                temp.pop();
+            }
+        }
+        
+        state.stack.push(tail);
     }
     
     virtual void enterArgs(Lua55GrammarParser::ArgsContext * ctx) override { }

@@ -112,7 +112,7 @@ scopeSpec: GLOBAL | LOCAL;
 
 funcdefStatement: 
     FUNCTION funcname funcbody 
-    | scopeSpec name funcbody
+    | scopeSpec FUNCTION name funcbody
 ;
 funcname: name ('.' name)* (':' name)? ;
 funcbody: '(' paramlist? ')' block END ;

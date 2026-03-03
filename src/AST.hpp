@@ -384,9 +384,33 @@ struct Var: public Expression {
 };
 
 
+struct FuncCallTail: public Node {
+    std::optional<std::string> name;
+    std::vector< std::shared_ptr<Expression> > args;
+
+    void print(std::ostream &os, int tabs = 0) const {
+        if (name.has_value()) {
+            os << ":" << name.value();
+        }
+        os << "(";
+        for (auto& arg: args) {
+            arg->print(os);
+            os << ",";
+        }
+        os << ")";
+    }
+};
+
 struct FuncCall: public Expression {
     std::shared_ptr<Expression> function;
-    std::vector< std::shared_ptr<Expression> > args;
+    std::vector< std::shared_ptr<FuncCallTail> > tails;
+
+    void print(std::ostream &os, int tabs = 0) const {
+        function->print(os);
+        for (auto& tail: tails) {
+            tail->print(os);
+        }
+    }
 
     Type type() const { return Type::FUNCCALL; }
 };
