@@ -15,14 +15,13 @@ public:
     T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, T__6 = 7, 
     T__7 = 8, T__8 = 9, T__9 = 10, T__10 = 11, T__11 = 12, T__12 = 13, T__13 = 14, 
     T__14 = 15, T__15 = 16, T__16 = 17, T__17 = 18, T__18 = 19, T__19 = 20, 
-    T__20 = 21, T__21 = 22, T__22 = 23, T__23 = 24, T__24 = 25, T__25 = 26, 
-    T__26 = 27, T__27 = 28, T__28 = 29, T__29 = 30, T__30 = 31, T__31 = 32, 
-    T__32 = 33, DO = 34, END = 35, AND = 36, OR = 37, NOT = 38, IF = 39, 
-    ELSEIF = 40, ELSE = 41, THEN = 42, WHILE = 43, REPEAT = 44, UNTIL = 45, 
-    FOR = 46, IN = 47, BREAK = 48, GOTO = 49, RETURN = 50, FUNCTION = 51, 
-    NIL = 52, TRUE = 53, FALSE = 54, LOCAL = 55, GLOBAL = 56, CONST = 57, 
-    NUMBER = 58, STRING = 59, UNTERMINATED_STRING = 60, ID = 61, WS = 62, 
-    LINE_COMMENT = 63, BLOCK_COMMENT = 64
+    T__20 = 21, COMPOP = 22, SHIFTOP = 23, PLUSOP = 24, MULOP = 25, UNOP = 26, 
+    DO = 27, END = 28, AND = 29, OR = 30, NOT = 31, IF = 32, ELSEIF = 33, 
+    ELSE = 34, THEN = 35, WHILE = 36, REPEAT = 37, UNTIL = 38, FOR = 39, 
+    IN = 40, BREAK = 41, GOTO = 42, RETURN = 43, FUNCTION = 44, NIL = 45, 
+    TRUE = 46, FALSE = 47, LOCAL = 48, GLOBAL = 49, CONST = 50, NUMBER = 51, 
+    STRING = 52, UNTERMINATED_STRING = 53, ID = 54, WS = 55, LINE_COMMENT = 56, 
+    BLOCK_COMMENT = 57
   };
 
   explicit Lua55GrammarLexer(antlr4::CharStream *input);

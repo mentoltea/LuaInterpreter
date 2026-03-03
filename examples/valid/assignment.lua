@@ -7,7 +7,7 @@ local a, b, c = 1, 2, 3
 y = 20
 z = x + y
 
-y.x["field1"]["field2"].xyz = x
+y.x["field1"]["field2"].xyz = y <= x ^ 5 - "minus"
 
 -- Множественное присваивание
 x, y = y, x  -- обмен значениями

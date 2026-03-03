@@ -338,6 +338,19 @@ struct Operation: public Expression {
     std::shared_ptr<Expression> rhs;
     
     Type type() const { return Type::OPERATION; }
+
+    void print(std::ostream &os, int tabs = 0) const {
+        os << "(";
+        if (kind == Kind::UNOP) {
+            os << operat;
+            lhs->print(os);
+        } else {
+            lhs->print(os);
+            os << " " << operat << " ";
+            rhs->print(os);
+        }
+        os << ")";
+    }
 };
 
 

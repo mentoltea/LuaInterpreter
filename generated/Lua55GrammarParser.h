@@ -15,14 +15,13 @@ public:
     T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, T__6 = 7, 
     T__7 = 8, T__8 = 9, T__9 = 10, T__10 = 11, T__11 = 12, T__12 = 13, T__13 = 14, 
     T__14 = 15, T__15 = 16, T__16 = 17, T__17 = 18, T__18 = 19, T__19 = 20, 
-    T__20 = 21, T__21 = 22, T__22 = 23, T__23 = 24, T__24 = 25, T__25 = 26, 
-    T__26 = 27, T__27 = 28, T__28 = 29, T__29 = 30, T__30 = 31, T__31 = 32, 
-    T__32 = 33, DO = 34, END = 35, AND = 36, OR = 37, NOT = 38, IF = 39, 
-    ELSEIF = 40, ELSE = 41, THEN = 42, WHILE = 43, REPEAT = 44, UNTIL = 45, 
-    FOR = 46, IN = 47, BREAK = 48, GOTO = 49, RETURN = 50, FUNCTION = 51, 
-    NIL = 52, TRUE = 53, FALSE = 54, LOCAL = 55, GLOBAL = 56, CONST = 57, 
-    NUMBER = 58, STRING = 59, UNTERMINATED_STRING = 60, ID = 61, WS = 62, 
-    LINE_COMMENT = 63, BLOCK_COMMENT = 64
+    T__20 = 21, COMPOP = 22, SHIFTOP = 23, PLUSOP = 24, MULOP = 25, UNOP = 26, 
+    DO = 27, END = 28, AND = 29, OR = 30, NOT = 31, IF = 32, ELSEIF = 33, 
+    ELSE = 34, THEN = 35, WHILE = 36, REPEAT = 37, UNTIL = 38, FOR = 39, 
+    IN = 40, BREAK = 41, GOTO = 42, RETURN = 43, FUNCTION = 44, NIL = 45, 
+    TRUE = 46, FALSE = 47, LOCAL = 48, GLOBAL = 49, CONST = 50, NUMBER = 51, 
+    STRING = 52, UNTERMINATED_STRING = 53, ID = 54, WS = 55, LINE_COMMENT = 56, 
+    BLOCK_COMMENT = 57
   };
 
   enum {
@@ -39,10 +38,9 @@ public:
     RuleExp = 34, RuleOpExp = 35, RuleOrExp = 36, RuleAndExp = 37, RuleCompExp = 38, 
     RuleBitorExp = 39, RuleBitxorExp = 40, RuleBitandExp = 41, RuleShiftExp = 42, 
     RuleConcatExp = 43, RulePlusExp = 44, RuleMulExp = 45, RuleUnaryExp = 46, 
-    RulePowExp = 47, RuleOpStartExp = 48, RuleCompop = 49, RuleShiftop = 50, 
-    RulePlusop = 51, RuleMulop = 52, RuleUnop = 53, RuleLiteral = 54, RulePrefixexp = 55, 
-    RuleFuncCall = 56, RuleFuncCall_tail = 57, RuleArgs = 58, RuleVar = 59, 
-    RuleVar_tail = 60, RuleName = 61, RuleAttributes_defined = 62
+    RulePowExp = 47, RuleOpStartExp = 48, RuleLiteral = 49, RulePrefixexp = 50, 
+    RuleFuncCall = 51, RuleFuncCall_tail = 52, RuleArgs = 53, RuleVar = 54, 
+    RuleVar_tail = 55, RuleName = 56, RuleAttributes_defined = 57
   };
 
   explicit Lua55GrammarParser(antlr4::TokenStream *input);
@@ -111,11 +109,6 @@ public:
   class UnaryExpContext;
   class PowExpContext;
   class OpStartExpContext;
-  class CompopContext;
-  class ShiftopContext;
-  class PlusopContext;
-  class MulopContext;
-  class UnopContext;
   class LiteralContext;
   class PrefixexpContext;
   class FuncCallContext;
@@ -708,9 +701,9 @@ public:
   public:
     CompExpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    BitorExpContext *bitorExp();
-    CompopContext *compop();
-    BitxorExpContext *bitxorExp();
+    std::vector<BitorExpContext *> bitorExp();
+    BitorExpContext* bitorExp(size_t i);
+    antlr4::tree::TerminalNode *COMPOP();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -767,8 +760,8 @@ public:
     virtual size_t getRuleIndex() const override;
     std::vector<ConcatExpContext *> concatExp();
     ConcatExpContext* concatExp(size_t i);
-    std::vector<ShiftopContext *> shiftop();
-    ShiftopContext* shiftop(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> SHIFTOP();
+    antlr4::tree::TerminalNode* SHIFTOP(size_t i);
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -797,8 +790,8 @@ public:
     virtual size_t getRuleIndex() const override;
     std::vector<MulExpContext *> mulExp();
     MulExpContext* mulExp(size_t i);
-    std::vector<PlusopContext *> plusop();
-    PlusopContext* plusop(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> PLUSOP();
+    antlr4::tree::TerminalNode* PLUSOP(size_t i);
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -813,8 +806,8 @@ public:
     virtual size_t getRuleIndex() const override;
     std::vector<UnaryExpContext *> unaryExp();
     UnaryExpContext* unaryExp(size_t i);
-    std::vector<MulopContext *> mulop();
-    MulopContext* mulop(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> MULOP();
+    antlr4::tree::TerminalNode* MULOP(size_t i);
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -828,7 +821,7 @@ public:
     UnaryExpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     PowExpContext *powExp();
-    UnopContext *unop();
+    antlr4::tree::TerminalNode *UNOP();
     UnaryExpContext *unaryExp();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -866,67 +859,6 @@ public:
   };
 
   OpStartExpContext* opStartExp();
-
-  class  CompopContext : public antlr4::ParserRuleContext {
-  public:
-    CompopContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-
-    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
-    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
-   
-  };
-
-  CompopContext* compop();
-
-  class  ShiftopContext : public antlr4::ParserRuleContext {
-  public:
-    ShiftopContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-
-    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
-    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
-   
-  };
-
-  ShiftopContext* shiftop();
-
-  class  PlusopContext : public antlr4::ParserRuleContext {
-  public:
-    PlusopContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-
-    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
-    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
-   
-  };
-
-  PlusopContext* plusop();
-
-  class  MulopContext : public antlr4::ParserRuleContext {
-  public:
-    MulopContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-
-    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
-    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
-   
-  };
-
-  MulopContext* mulop();
-
-  class  UnopContext : public antlr4::ParserRuleContext {
-  public:
-    UnopContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *NOT();
-
-    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
-    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
-   
-  };
-
-  UnopContext* unop();
 
   class  LiteralContext : public antlr4::ParserRuleContext {
   public:

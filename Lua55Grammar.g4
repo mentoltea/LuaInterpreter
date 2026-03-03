@@ -156,15 +156,15 @@ exp:
 opExp: orExp;
 orExp: andExp (OR andExp)* ;
 andExp: compExp (AND compExp)* ;
-compExp: bitorExp (compop bitxorExp)? ;
+compExp: bitorExp (COMPOP bitorExp)? ;
 bitorExp: bitxorExp ('|' bitxorExp)* ;
 bitxorExp: bitandExp ('~' bitandExp)* ;
 bitandExp: shiftExp ('&' shiftExp)* ;
-shiftExp: concatExp (shiftop concatExp)* ;
+shiftExp: concatExp (SHIFTOP concatExp)* ;
 concatExp: plusExp ('..' plusExp)* ;
-plusExp: mulExp (plusop mulExp)* ;
-mulExp: unaryExp (mulop unaryExp)* ;
-unaryExp: powExp | unop unaryExp;
+plusExp: mulExp (PLUSOP mulExp)* ;
+mulExp: unaryExp (MULOP unaryExp)* ;
+unaryExp: powExp | UNOP unaryExp;
 powExp: opStartExp ('^' powExp)? ;
 
 opStartExp: 
@@ -173,11 +173,11 @@ opStartExp:
     | tableConstructor
 ;
 
-compop: '<' | '<=' | '>' | '>=' | '==' | '~=' ; 
-shiftop: '<<' | '>>' ;
-plusop: '+' | '-' ;
-mulop: '*' | '/' | '//' | '%' ;
-unop: NOT | '#' | '-' | '~' ; 
+COMPOP: '<' | '<=' | '>' | '>=' | '==' | '~=' ; 
+SHIFTOP: '<<' | '>>' ;
+PLUSOP: '+' | '-' ;
+MULOP: '*' | '/' | '//' | '%' ;
+UNOP: NOT | '#' | '-' | '~' ; 
 
 literal: 
     NIL 

@@ -163,21 +163,6 @@ public:
   virtual void enterOpStartExp(Lua55GrammarParser::OpStartExpContext * /*ctx*/) override { }
   virtual void exitOpStartExp(Lua55GrammarParser::OpStartExpContext * /*ctx*/) override { }
 
-  virtual void enterCompop(Lua55GrammarParser::CompopContext * /*ctx*/) override { }
-  virtual void exitCompop(Lua55GrammarParser::CompopContext * /*ctx*/) override { }
-
-  virtual void enterShiftop(Lua55GrammarParser::ShiftopContext * /*ctx*/) override { }
-  virtual void exitShiftop(Lua55GrammarParser::ShiftopContext * /*ctx*/) override { }
-
-  virtual void enterPlusop(Lua55GrammarParser::PlusopContext * /*ctx*/) override { }
-  virtual void exitPlusop(Lua55GrammarParser::PlusopContext * /*ctx*/) override { }
-
-  virtual void enterMulop(Lua55GrammarParser::MulopContext * /*ctx*/) override { }
-  virtual void exitMulop(Lua55GrammarParser::MulopContext * /*ctx*/) override { }
-
-  virtual void enterUnop(Lua55GrammarParser::UnopContext * /*ctx*/) override { }
-  virtual void exitUnop(Lua55GrammarParser::UnopContext * /*ctx*/) override { }
-
   virtual void enterLiteral(Lua55GrammarParser::LiteralContext * /*ctx*/) override { }
   virtual void exitLiteral(Lua55GrammarParser::LiteralContext * /*ctx*/) override { }
 

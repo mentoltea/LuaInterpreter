@@ -153,59 +153,341 @@ class Lua55Listener: public Lua55GrammarBaseListener {
         std::cout << " )" << std::endl;
     }
     
-    virtual void enterOpExp(Lua55GrammarParser::OpExpContext * ctx) override { }
-    virtual void exitOpExp(Lua55GrammarParser::OpExpContext * ctx) override { }
+    virtual void exitOpExp(Lua55GrammarParser::OpExpContext * ctx) override { 
+        std::cout << "Operation: ";
+        state.stack.top()->print(std::cout);
+        std::cout << std::endl;
+    }
     
-    virtual void enterOrExp(Lua55GrammarParser::OrExpContext * ctx) override { }
-    virtual void exitOrExp(Lua55GrammarParser::OrExpContext * ctx) override { }
+    virtual void exitOrExp(Lua55GrammarParser::OrExpContext * ctx) override { 
+        if (ctx->andExp().size() > 1) {
+            size_t n = ctx->andExp().size();
+
+            std::vector<Expression*> operands(n, nullptr);
+
+            for (size_t i=0; i<n; i++) {
+                operands[n-1-i] = (Expression*) state.stack.top();
+                state.stack.pop();
+            }
+
+            
+            for (size_t i=0; i<n-1; i++) {
+                Operation* opexp = new Operation;
+
+                Expression* lhs = operands[i];
+                Expression* rhs = operands[i+1];
+
+                opexp->kind = Operation::Kind::BINOP;
+                opexp->operat = ctx->OR(i)->toString();
+
+                opexp->lhs = std::shared_ptr<Expression>(lhs);
+                opexp->rhs = std::shared_ptr<Expression>(rhs);
+
+                operands[i+1] = opexp;
+            }
+
+            state.stack.push(operands[n-1]);
+        }
+    }
     
-    virtual void enterAndExp(Lua55GrammarParser::AndExpContext * ctx) override { }
-    virtual void exitAndExp(Lua55GrammarParser::AndExpContext * ctx) override { }
+    virtual void exitAndExp(Lua55GrammarParser::AndExpContext * ctx) override { 
+        if (ctx->compExp().size() > 1) {
+            size_t n = ctx->compExp().size();
+
+            std::vector<Expression*> operands(n, nullptr);
+
+            for (size_t i=0; i<n; i++) {
+                operands[n-1-i] = (Expression*) state.stack.top();
+                state.stack.pop();
+            }
+
+            
+            for (size_t i=0; i<n-1; i++) {
+                Operation* opexp = new Operation;
+
+                Expression* lhs = operands[i];
+                Expression* rhs = operands[i+1];
+
+                opexp->kind = Operation::Kind::BINOP;
+                opexp->operat = ctx->AND(i)->toString();
+
+                opexp->lhs = std::shared_ptr<Expression>(lhs);
+                opexp->rhs = std::shared_ptr<Expression>(rhs);
+
+                operands[i+1] = opexp;
+            }
+
+            state.stack.push(operands[n-1]);
+        }
+    }
     
-    virtual void enterCompExp(Lua55GrammarParser::CompExpContext * ctx) override { }
-    virtual void exitCompExp(Lua55GrammarParser::CompExpContext * ctx) override { }
+    virtual void exitCompExp(Lua55GrammarParser::CompExpContext * ctx) override { 
+        if (ctx->COMPOP()) {
+            Expression* rhs = (Expression*) state.stack.top();
+            state.stack.pop();
+
+            Expression* lhs = (Expression*) state.stack.top();
+            state.stack.pop();
+
+            Operation* opexp = new Operation;
+            opexp->kind = Operation::Kind::BINOP;
+            opexp->operat = ctx->COMPOP()->toString();
+            opexp->lhs = std::shared_ptr<Expression>(lhs);
+            opexp->rhs = std::shared_ptr<Expression>(rhs);
+
+            state.stack.push(opexp);
+        }
+    }
     
-    virtual void enterBitorExp(Lua55GrammarParser::BitorExpContext * ctx) override { }
-    virtual void exitBitorExp(Lua55GrammarParser::BitorExpContext * ctx) override { }
+    virtual void exitBitorExp(Lua55GrammarParser::BitorExpContext * ctx) override { 
+        if (ctx->bitxorExp().size() > 1) {
+            size_t n = ctx->bitxorExp().size();
+
+            std::vector<Expression*> operands(n, nullptr);
+
+            for (size_t i=0; i<n; i++) {
+                operands[n-1-i] = (Expression*) state.stack.top();
+                state.stack.pop();
+            }
+
+            
+            for (size_t i=0; i<n-1; i++) {
+                Operation* opexp = new Operation;
+
+                Expression* lhs = operands[i];
+                Expression* rhs = operands[i+1];
+
+                opexp->kind = Operation::Kind::BINOP;
+                opexp->operat = "|";
+
+                opexp->lhs = std::shared_ptr<Expression>(lhs);
+                opexp->rhs = std::shared_ptr<Expression>(rhs);
+
+                operands[i+1] = opexp;
+            }
+
+            state.stack.push(operands[n-1]);
+        }
+    }
     
-    virtual void enterBitxorExp(Lua55GrammarParser::BitxorExpContext * ctx) override { }
-    virtual void exitBitxorExp(Lua55GrammarParser::BitxorExpContext * ctx) override { }
+    virtual void exitBitxorExp(Lua55GrammarParser::BitxorExpContext * ctx) override { 
+        if (ctx->bitandExp().size() > 1) {
+            size_t n = ctx->bitandExp().size();
+
+            std::vector<Expression*> operands(n, nullptr);
+
+            for (size_t i=0; i<n; i++) {
+                operands[n-1-i] = (Expression*) state.stack.top();
+                state.stack.pop();
+            }
+
+            
+            for (size_t i=0; i<n-1; i++) {
+                Operation* opexp = new Operation;
+
+                Expression* lhs = operands[i];
+                Expression* rhs = operands[i+1];
+
+                opexp->kind = Operation::Kind::BINOP;
+                opexp->operat = "~";
+
+                opexp->lhs = std::shared_ptr<Expression>(lhs);
+                opexp->rhs = std::shared_ptr<Expression>(rhs);
+
+                operands[i+1] = opexp;
+            }
+
+            state.stack.push(operands[n-1]);
+        }
+    }
     
-    virtual void enterBitandExp(Lua55GrammarParser::BitandExpContext * ctx) override { }
-    virtual void exitBitandExp(Lua55GrammarParser::BitandExpContext * ctx) override { }
+    virtual void exitBitandExp(Lua55GrammarParser::BitandExpContext * ctx) override { 
+        if (ctx->shiftExp().size() > 1) {
+            size_t n = ctx->shiftExp().size();
+
+            std::vector<Expression*> operands(n, nullptr);
+
+            for (size_t i=0; i<n; i++) {
+                operands[n-1-i] = (Expression*) state.stack.top();
+                state.stack.pop();
+            }
+
+            
+            for (size_t i=0; i<n-1; i++) {
+                Operation* opexp = new Operation;
+
+                Expression* lhs = operands[i];
+                Expression* rhs = operands[i+1];
+
+                opexp->kind = Operation::Kind::BINOP;
+                opexp->operat = "&";
+
+                opexp->lhs = std::shared_ptr<Expression>(lhs);
+                opexp->rhs = std::shared_ptr<Expression>(rhs);
+
+                operands[i+1] = opexp;
+            }
+
+            state.stack.push(operands[n-1]);
+        }
+    }
     
-    virtual void enterShiftExp(Lua55GrammarParser::ShiftExpContext * ctx) override { }
-    virtual void exitShiftExp(Lua55GrammarParser::ShiftExpContext * ctx) override { }
+    virtual void exitShiftExp(Lua55GrammarParser::ShiftExpContext * ctx) override { 
+        if (ctx->SHIFTOP().size() > 0) {
+            size_t n = ctx->concatExp().size();
+
+            std::vector<Expression*> operands(n, nullptr);
+
+            for (size_t i=0; i<n; i++) {
+                operands[n-1-i] = (Expression*) state.stack.top();
+                state.stack.pop();
+            }
+
+            
+            for (size_t i=0; i<n-1; i++) {
+                Operation* opexp = new Operation;
+
+                Expression* lhs = operands[i];
+                Expression* rhs = operands[i+1];
+
+                opexp->kind = Operation::Kind::BINOP;
+                opexp->operat = ctx->SHIFTOP(i)->toString();
+
+                opexp->lhs = std::shared_ptr<Expression>(lhs);
+                opexp->rhs = std::shared_ptr<Expression>(rhs);
+
+                operands[i+1] = opexp;
+            }
+
+            state.stack.push(operands[n-1]);
+        }
+    }
     
-    virtual void enterConcatExp(Lua55GrammarParser::ConcatExpContext * ctx) override { }
-    virtual void exitConcatExp(Lua55GrammarParser::ConcatExpContext * ctx) override { }
+    virtual void exitConcatExp(Lua55GrammarParser::ConcatExpContext * ctx) override { 
+        if (ctx->plusExp().size() > 1) {
+            size_t n = ctx->plusExp().size();
+
+            std::vector<Expression*> operands(n, nullptr);
+
+            for (size_t i=0; i<n; i++) {
+                operands[n-1-i] = (Expression*) state.stack.top();
+                state.stack.pop();
+            }
+
+            
+            for (size_t i=0; i<n-1; i++) {
+                Operation* opexp = new Operation;
+
+                Expression* lhs = operands[i];
+                Expression* rhs = operands[i+1];
+
+                opexp->kind = Operation::Kind::BINOP;
+                opexp->operat = "..";
+
+                opexp->lhs = std::shared_ptr<Expression>(lhs);
+                opexp->rhs = std::shared_ptr<Expression>(rhs);
+
+                operands[i+1] = opexp;
+            }
+
+            state.stack.push(operands[n-1]);
+        }
+    }
     
-    virtual void enterPlusExp(Lua55GrammarParser::PlusExpContext * ctx) override { }
-    virtual void exitPlusExp(Lua55GrammarParser::PlusExpContext * ctx) override { }
+    virtual void exitPlusExp(Lua55GrammarParser::PlusExpContext * ctx) override { 
+        if (ctx->PLUSOP().size() > 0) {
+            size_t n = ctx->mulExp().size();
+
+            std::vector<Expression*> operands(n, nullptr);
+
+            for (size_t i=0; i<n; i++) {
+                operands[n-1-i] = (Expression*) state.stack.top();
+                state.stack.pop();
+            }
+
+            
+            for (size_t i=0; i<n-1; i++) {
+                Operation* opexp = new Operation;
+
+                Expression* lhs = operands[i];
+                Expression* rhs = operands[i+1];
+
+                opexp->kind = Operation::Kind::BINOP;
+                opexp->operat = ctx->PLUSOP(i)->toString();
+
+                opexp->lhs = std::shared_ptr<Expression>(lhs);
+                opexp->rhs = std::shared_ptr<Expression>(rhs);
+
+                operands[i+1] = opexp;
+            }
+
+            state.stack.push(operands[n-1]);
+        }
+    }
     
-    virtual void enterMulExp(Lua55GrammarParser::MulExpContext * ctx) override { }
-    virtual void exitMulExp(Lua55GrammarParser::MulExpContext * ctx) override { }
+    virtual void exitMulExp(Lua55GrammarParser::MulExpContext * ctx) override { 
+        if (ctx->MULOP().size() > 0) {
+            size_t n = ctx->unaryExp().size();
+
+            std::vector<Expression*> operands(n, nullptr);
+
+            for (size_t i=0; i<n; i++) {
+                operands[n-1-i] = (Expression*) state.stack.top();
+                state.stack.pop();
+            }
+
+            
+            for (size_t i=0; i<n-1; i++) {
+                Operation* opexp = new Operation;
+
+                Expression* lhs = operands[i];
+                Expression* rhs = operands[i+1];
+
+                opexp->kind = Operation::Kind::BINOP;
+                opexp->operat = ctx->MULOP(i)->toString();
+
+                opexp->lhs = std::shared_ptr<Expression>(lhs);
+                opexp->rhs = std::shared_ptr<Expression>(rhs);
+
+                operands[i+1] = opexp;
+            }
+
+            state.stack.push(operands[n-1]);
+        }
+    }
     
-    virtual void enterUnaryExp(Lua55GrammarParser::UnaryExpContext * ctx) override { }
-    virtual void exitUnaryExp(Lua55GrammarParser::UnaryExpContext * ctx) override { }
+    virtual void exitUnaryExp(Lua55GrammarParser::UnaryExpContext * ctx) override { 
+        if (ctx->UNOP()) {
+            Expression* lhs = (Expression*) state.stack.top();
+            state.stack.pop();
+
+            Operation* opexp = new Operation;
+            opexp->kind = Operation::Kind::UNOP;
+            opexp->operat = ctx->UNOP()->toString();
+            opexp->lhs = std::shared_ptr<Expression>(lhs);
+
+            state.stack.push(opexp);
+        }
+    }
     
-    virtual void enterPowExp(Lua55GrammarParser::PowExpContext * ctx) override { }
-    virtual void exitPowExp(Lua55GrammarParser::PowExpContext * ctx) override { }
+    virtual void exitPowExp(Lua55GrammarParser::PowExpContext * ctx) override {
+        if (ctx->powExp()) {
+            Expression* rhs = (Expression*) state.stack.top();
+            state.stack.pop();
+
+            Expression* lhs = (Expression*) state.stack.top();
+            state.stack.pop();
+
+            Operation* opexp = new Operation;
+            opexp->kind = Operation::Kind::BINOP;
+            opexp->operat = "^";
+            opexp->lhs = std::shared_ptr<Expression>(lhs);
+            opexp->rhs = std::shared_ptr<Expression>(rhs);
+
+            state.stack.push(opexp);
+        }
+    }
     
-    virtual void enterCompop(Lua55GrammarParser::CompopContext * ctx) override { }
-    virtual void exitCompop(Lua55GrammarParser::CompopContext * ctx) override { }
-    
-    virtual void enterShiftop(Lua55GrammarParser::ShiftopContext * ctx) override { }
-    virtual void exitShiftop(Lua55GrammarParser::ShiftopContext * ctx) override { }
-    
-    virtual void enterPlusop(Lua55GrammarParser::PlusopContext * ctx) override { }
-    virtual void exitPlusop(Lua55GrammarParser::PlusopContext * ctx) override { }
-    
-    virtual void enterMulop(Lua55GrammarParser::MulopContext * ctx) override { }
-    virtual void exitMulop(Lua55GrammarParser::MulopContext * ctx) override { }
-    
-    virtual void enterUnop(Lua55GrammarParser::UnopContext * ctx) override { }
-    virtual void exitUnop(Lua55GrammarParser::UnopContext * ctx) override { }
     
     virtual void exitLiteral(Lua55GrammarParser::LiteralContext * ctx) override { 
         Literal* lit = new Literal;

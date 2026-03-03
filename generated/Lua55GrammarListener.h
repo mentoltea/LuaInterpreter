@@ -161,21 +161,6 @@ public:
   virtual void enterOpStartExp(Lua55GrammarParser::OpStartExpContext *ctx) = 0;
   virtual void exitOpStartExp(Lua55GrammarParser::OpStartExpContext *ctx) = 0;
 
-  virtual void enterCompop(Lua55GrammarParser::CompopContext *ctx) = 0;
-  virtual void exitCompop(Lua55GrammarParser::CompopContext *ctx) = 0;
-
-  virtual void enterShiftop(Lua55GrammarParser::ShiftopContext *ctx) = 0;
-  virtual void exitShiftop(Lua55GrammarParser::ShiftopContext *ctx) = 0;
-
-  virtual void enterPlusop(Lua55GrammarParser::PlusopContext *ctx) = 0;
-  virtual void exitPlusop(Lua55GrammarParser::PlusopContext *ctx) = 0;
-
-  virtual void enterMulop(Lua55GrammarParser::MulopContext *ctx) = 0;
-  virtual void exitMulop(Lua55GrammarParser::MulopContext *ctx) = 0;
-
-  virtual void enterUnop(Lua55GrammarParser::UnopContext *ctx) = 0;
-  virtual void exitUnop(Lua55GrammarParser::UnopContext *ctx) = 0;
-
   virtual void enterLiteral(Lua55GrammarParser::LiteralContext *ctx) = 0;
   virtual void exitLiteral(Lua55GrammarParser::LiteralContext *ctx) = 0;
 
