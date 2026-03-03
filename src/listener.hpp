@@ -58,7 +58,27 @@ class Lua55Listener: public Lua55GrammarBaseListener {
     virtual void exitFuncname(Lua55GrammarParser::FuncnameContext * ctx) override { }
     
     virtual void enterFuncbody(Lua55GrammarParser::FuncbodyContext * ctx) override { }
-    virtual void exitFuncbody(Lua55GrammarParser::FuncbodyContext * ctx) override { }
+    virtual void exitFuncbody(Lua55GrammarParser::FuncbodyContext * ctx) override {
+        FuncBody * body = new FuncBody;
+        
+        body->block = std::shared_ptr<Block>((Block*) state.stack.top());
+        state.stack.pop();
+
+        if (ctx->paramlist()) {
+            if (ctx->paramlist()->vararg()) {
+                body->variadic = true;
+                if (ctx->paramlist()->vararg()->name()) body->variadic_param = ctx->paramlist()->vararg()->name()->ID()->toString();
+            }
+
+            if (ctx->paramlist()->namelist()) {
+                for (auto& name_ctx: ctx->paramlist()->namelist()->name()) {
+                    body->params.push_back(name_ctx->ID()->toString());
+                }
+            }
+        }
+
+        state.stack.push(body);
+    }
     
     virtual void enterParamlist(Lua55GrammarParser::ParamlistContext * ctx) override { }
     virtual void exitParamlist(Lua55GrammarParser::ParamlistContext * ctx) override { }
@@ -105,7 +125,14 @@ class Lua55Listener: public Lua55GrammarBaseListener {
     virtual void exitFuncCallStatement(Lua55GrammarParser::FuncCallStatementContext * ctx) override { }
     
     virtual void enterFuncAnon(Lua55GrammarParser::FuncAnonContext * ctx) override { }
-    virtual void exitFuncAnon(Lua55GrammarParser::FuncAnonContext * ctx) override { }
+    virtual void exitFuncAnon(Lua55GrammarParser::FuncAnonContext * ctx) override { 
+        FuncAnon* func = new FuncAnon;
+        
+        func->body = std::shared_ptr<FuncBody>( (FuncBody*) state.stack.top() );
+        state.stack.pop();
+
+        state.stack.push(func);
+    }
     
     virtual void enterTableConstructor(Lua55GrammarParser::TableConstructorContext * ctx) override { }
     virtual void exitTableConstructor(Lua55GrammarParser::TableConstructorContext * ctx) override { }

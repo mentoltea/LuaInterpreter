@@ -160,10 +160,10 @@ struct FuncName {
     std::string kind;
 };
 
-struct FuncBody {
+struct FuncBody: public Node {
     std::vector< std::string > params;
     bool variadic;
-    std::string variadic_param;
+    std::optional<std::string> variadic_param;
 
     std::shared_ptr< Block > block;
 };
