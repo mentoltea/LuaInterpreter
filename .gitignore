@@ -1,5 +1,6 @@
 .antlr
 antlr4
+generated
 *.exe
 build
 out
