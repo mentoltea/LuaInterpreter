@@ -29,18 +29,19 @@ public:
     RuleDoBlockStatement = 4, RuleAssignmentStatement = 5, RuleVarlist = 6, 
     RuleExplist = 7, RuleDeclarationStatement = 8, RuleGlobalAttribStatement = 9, 
     RuleAttnamelist = 10, RuleNameattr = 11, RuleAttrib = 12, RuleScopeSpec = 13, 
-    RuleFuncdefStatement = 14, RuleFuncname = 15, RuleFuncbody = 16, RuleParamlist = 17, 
-    RuleVararg = 18, RuleNamelist = 19, RuleWhileStatement = 20, RuleRepeatStatement = 21, 
-    RuleIfStatement = 22, RuleNumericForStatement = 23, RuleGenericForStatement = 24, 
-    RuleGotoStatement = 25, RuleLabelStatement = 26, RuleBreakStatement = 27, 
-    RuleReturnStatement = 28, RuleFuncCallStatement = 29, RuleFuncAnon = 30, 
-    RuleTableConstructor = 31, RuleFieldlist = 32, RuleField = 33, RuleExp = 34, 
-    RuleOpExp = 35, RuleOrExp = 36, RuleAndExp = 37, RuleCompExp = 38, RuleBitorExp = 39, 
-    RuleBitxorExp = 40, RuleBitandExp = 41, RuleShiftExp = 42, RuleConcatExp = 43, 
-    RulePlusExp = 44, RuleMulExp = 45, RuleUnaryExp = 46, RulePowExp = 47, 
-    RuleOpStartExp = 48, RuleLiteral = 49, RulePrefixexp = 50, RuleFuncCall = 51, 
-    RuleFuncCall_tail = 52, RuleArgs = 53, RuleVar = 54, RuleVar_tail = 55, 
-    RuleName = 56
+    RuleFuncdefStatement = 14, RuleDefaultFuncdefStatement = 15, RuleScopedFuncdefStatement = 16, 
+    RuleFuncname = 17, RuleNamespec = 18, RuleFuncbody = 19, RuleParamlist = 20, 
+    RuleVararg = 21, RuleNamelist = 22, RuleWhileStatement = 23, RuleRepeatStatement = 24, 
+    RuleIfStatement = 25, RuleNumericForStatement = 26, RuleGenericForStatement = 27, 
+    RuleGotoStatement = 28, RuleLabelStatement = 29, RuleBreakStatement = 30, 
+    RuleReturnStatement = 31, RuleFuncCallStatement = 32, RuleFuncAnon = 33, 
+    RuleTableConstructor = 34, RuleFieldlist = 35, RuleField = 36, RuleExp = 37, 
+    RuleOpExp = 38, RuleOrExp = 39, RuleAndExp = 40, RuleCompExp = 41, RuleBitorExp = 42, 
+    RuleBitxorExp = 43, RuleBitandExp = 44, RuleShiftExp = 45, RuleConcatExp = 46, 
+    RulePlusExp = 47, RuleMulExp = 48, RuleUnaryExp = 49, RulePowExp = 50, 
+    RuleOpStartExp = 51, RuleLiteral = 52, RulePrefixexp = 53, RuleFuncCall = 54, 
+    RuleFuncCall_tail = 55, RuleArgs = 56, RuleVar = 57, RuleVar_tail = 58, 
+    RuleName = 59
   };
 
   explicit Lua55GrammarParser(antlr4::TokenStream *input);
@@ -75,7 +76,10 @@ public:
   class AttribContext;
   class ScopeSpecContext;
   class FuncdefStatementContext;
+  class DefaultFuncdefStatementContext;
+  class ScopedFuncdefStatementContext;
   class FuncnameContext;
+  class NamespecContext;
   class FuncbodyContext;
   class ParamlistContext;
   class VarargContext;
@@ -332,11 +336,8 @@ public:
   public:
     FuncdefStatementContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *FUNCTION();
-    FuncnameContext *funcname();
-    FuncbodyContext *funcbody();
-    ScopeSpecContext *scopeSpec();
-    NameContext *name();
+    DefaultFuncdefStatementContext *defaultFuncdefStatement();
+    ScopedFuncdefStatementContext *scopedFuncdefStatement();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -345,9 +346,54 @@ public:
 
   FuncdefStatementContext* funcdefStatement();
 
+  class  DefaultFuncdefStatementContext : public antlr4::ParserRuleContext {
+  public:
+    DefaultFuncdefStatementContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *FUNCTION();
+    FuncnameContext *funcname();
+    FuncbodyContext *funcbody();
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+   
+  };
+
+  DefaultFuncdefStatementContext* defaultFuncdefStatement();
+
+  class  ScopedFuncdefStatementContext : public antlr4::ParserRuleContext {
+  public:
+    ScopedFuncdefStatementContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    ScopeSpecContext *scopeSpec();
+    antlr4::tree::TerminalNode *FUNCTION();
+    NameContext *name();
+    FuncbodyContext *funcbody();
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+   
+  };
+
+  ScopedFuncdefStatementContext* scopedFuncdefStatement();
+
   class  FuncnameContext : public antlr4::ParserRuleContext {
   public:
     FuncnameContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    NamespecContext *namespec();
+    NameContext *name();
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+   
+  };
+
+  FuncnameContext* funcname();
+
+  class  NamespecContext : public antlr4::ParserRuleContext {
+  public:
+    NamespecContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     std::vector<NameContext *> name();
     NameContext* name(size_t i);
@@ -357,7 +403,7 @@ public:
    
   };
 
-  FuncnameContext* funcname();
+  NamespecContext* namespec();
 
   class  FuncbodyContext : public antlr4::ParserRuleContext {
   public:

@@ -135,11 +135,13 @@ struct FuncdefSt: public Statement {
 
 struct DefaultFuncdefSt: public FuncdefSt {
     std::shared_ptr<FuncName> name;
+    DefaultFuncdefSt() { kind = Kind::DEFAULT; }
 };
 
 struct ScopedFuncdefSt: public FuncdefSt {
     ScopeSpec scope;
     std::string name;
+    ScopedFuncdefSt() { kind = Kind::SCOPED; }
 };
 
 struct FuncName: public Node {

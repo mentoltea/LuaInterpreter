@@ -124,14 +124,51 @@ class Lua55Listener: public Lua55GrammarBaseListener {
         st->attr = std::shared_ptr<Attribute>(new Attribute(ctx->attrib()->ATTRIBUTES_DEFINED()->toString()));
         state.stack.push(st);
     }
+
+
     
-    virtual void exitFuncdefStatement(Lua55GrammarParser::FuncdefStatementContext * ctx) override { 
-        FuncdefSt* st = new FuncdefSt;
-        #error
+    virtual void exitFuncdefStatement(Lua55GrammarParser::FuncdefStatementContext * ctx) override { }
+
+    virtual void exitDefaultFuncdefStatement(Lua55GrammarParser::DefaultFuncdefStatementContext * ctx) override { 
+        DefaultFuncdefSt *st = new DefaultFuncdefSt;
+
+        st->body = std::shared_ptr<FuncBody>((FuncBody*) state.stack.top());
+        state.stack.pop();
+        
+        st->name = std::shared_ptr<FuncName>((FuncName*) state.stack.top());
+        state.stack.pop();
+
+        state.stack.push(st);
+    }
+
+    virtual void exitScopedFuncdefStatement(Lua55GrammarParser::ScopedFuncdefStatementContext * ctx) override { 
+        ScopedFuncdefSt *st = new ScopedFuncdefSt;
+
+        st->body = std::shared_ptr<FuncBody>((FuncBody*) state.stack.top());
+        state.stack.pop();
+
+        if (ctx->scopeSpec()->GLOBAL()) st->scope = ScopeSpec::GLOBAL;
+        else st->scope = ScopeSpec::LOCAL;
+
+        st->name = ctx->name()->ID()->toString();
+
+        state.stack.push(st);
     }
     
-    virtual void enterFuncname(Lua55GrammarParser::FuncnameContext * ctx) override { }
-    virtual void exitFuncname(Lua55GrammarParser::FuncnameContext * ctx) override { }
+    virtual void exitFuncname(Lua55GrammarParser::FuncnameContext * ctx) override { 
+        FuncName * name = new FuncName;
+        
+        name->base = ctx->namespec()->name(0)->ID()->toString();
+        size_t n = ctx->namespec()->name().size();
+        for (size_t i=1; i<n; i++) {
+            name->specifications.push_back(
+                ctx->namespec()->name(i)->ID()->toString()
+            );
+        }
+        if (ctx->name()) name->kind = ctx->name()->ID()->toString();
+
+        state.stack.push(name);
+    }
     
     virtual void enterFuncbody(Lua55GrammarParser::FuncbodyContext * ctx) override { }
     virtual void exitFuncbody(Lua55GrammarParser::FuncbodyContext * ctx) override {

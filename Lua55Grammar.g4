@@ -112,10 +112,14 @@ attrib: '<' ATTRIBUTES_DEFINED '>' ;
 scopeSpec: GLOBAL | LOCAL;
 
 funcdefStatement: 
-    FUNCTION funcname funcbody 
-    | scopeSpec FUNCTION name funcbody
+    defaultFuncdefStatement
+    | scopedFuncdefStatement
 ;
-funcname: name ('.' name)* (':' name)? ;
+defaultFuncdefStatement: FUNCTION funcname funcbody; 
+scopedFuncdefStatement: scopeSpec FUNCTION name funcbody; 
+
+funcname: namespec (':' name)? ;
+namespec: name ('.' name)* ;
 funcbody: '(' paramlist? ')' block END ;
 
 paramlist: namelist (',' vararg)? | vararg ;

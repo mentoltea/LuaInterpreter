@@ -61,8 +61,17 @@ public:
   virtual void enterFuncdefStatement(Lua55GrammarParser::FuncdefStatementContext * /*ctx*/) override { }
   virtual void exitFuncdefStatement(Lua55GrammarParser::FuncdefStatementContext * /*ctx*/) override { }
 
+  virtual void enterDefaultFuncdefStatement(Lua55GrammarParser::DefaultFuncdefStatementContext * /*ctx*/) override { }
+  virtual void exitDefaultFuncdefStatement(Lua55GrammarParser::DefaultFuncdefStatementContext * /*ctx*/) override { }
+
+  virtual void enterScopedFuncdefStatement(Lua55GrammarParser::ScopedFuncdefStatementContext * /*ctx*/) override { }
+  virtual void exitScopedFuncdefStatement(Lua55GrammarParser::ScopedFuncdefStatementContext * /*ctx*/) override { }
+
   virtual void enterFuncname(Lua55GrammarParser::FuncnameContext * /*ctx*/) override { }
   virtual void exitFuncname(Lua55GrammarParser::FuncnameContext * /*ctx*/) override { }
+
+  virtual void enterNamespec(Lua55GrammarParser::NamespecContext * /*ctx*/) override { }
+  virtual void exitNamespec(Lua55GrammarParser::NamespecContext * /*ctx*/) override { }
 
   virtual void enterFuncbody(Lua55GrammarParser::FuncbodyContext * /*ctx*/) override { }
   virtual void exitFuncbody(Lua55GrammarParser::FuncbodyContext * /*ctx*/) override { }

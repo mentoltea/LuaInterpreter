@@ -59,8 +59,17 @@ public:
   virtual void enterFuncdefStatement(Lua55GrammarParser::FuncdefStatementContext *ctx) = 0;
   virtual void exitFuncdefStatement(Lua55GrammarParser::FuncdefStatementContext *ctx) = 0;
 
+  virtual void enterDefaultFuncdefStatement(Lua55GrammarParser::DefaultFuncdefStatementContext *ctx) = 0;
+  virtual void exitDefaultFuncdefStatement(Lua55GrammarParser::DefaultFuncdefStatementContext *ctx) = 0;
+
+  virtual void enterScopedFuncdefStatement(Lua55GrammarParser::ScopedFuncdefStatementContext *ctx) = 0;
+  virtual void exitScopedFuncdefStatement(Lua55GrammarParser::ScopedFuncdefStatementContext *ctx) = 0;
+
   virtual void enterFuncname(Lua55GrammarParser::FuncnameContext *ctx) = 0;
   virtual void exitFuncname(Lua55GrammarParser::FuncnameContext *ctx) = 0;
+
+  virtual void enterNamespec(Lua55GrammarParser::NamespecContext *ctx) = 0;
+  virtual void exitNamespec(Lua55GrammarParser::NamespecContext *ctx) = 0;
 
   virtual void enterFuncbody(Lua55GrammarParser::FuncbodyContext *ctx) = 0;
   virtual void exitFuncbody(Lua55GrammarParser::FuncbodyContext *ctx) = 0;
