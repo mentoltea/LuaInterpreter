@@ -44,70 +44,19 @@ statement:
 
 emptyStatement: ';';
 
-
-// attnamelist ::=  [attrib] Name [attrib] {‘,’ Name [attrib]}
-
-// attrib ::= ‘<’ Name ‘>’
-
-// retstat ::= return [explist] [‘;’]
-
-// label ::= ‘::’ Name ‘::’
-
-// funcname ::= Name {‘.’ Name} [‘:’ Name]
-
-// varlist ::= var {‘,’ var}
-
-// var ::=  Name | prefixexp ‘[’ exp ‘]’ | prefixexp ‘.’ Name 
-
-// namelist ::= Name {‘,’ Name}
-
-// explist ::= exp {‘,’ exp}
-
-// exp ::=  nil | false | true | Numeral | LiteralString | ‘...’ | functiondef | 
-//         prefixexp | tableconstructor | exp binop exp | unop exp 
-
-// prefixexp ::= var | functioncall | ‘(’ exp ‘)’
-
-// functioncall ::=  prefixexp args | prefixexp ‘:’ Name args 
-
-// args ::=  ‘(’ [explist] ‘)’ | tableconstructor | LiteralString 
-
-// functiondef ::= function funcbody
-
-// funcbody ::= ‘(’ [parlist] ‘)’ block end
-
-// parlist ::= namelist [‘,’ varargparam] | varargparam
-
-// varargparam ::= ‘...’ [Name]
-
-// tableconstructor ::= ‘{’ [fieldlist] ‘}’
-
-// fieldlist ::= field {fieldsep field} [fieldsep]
-
-// field ::= ‘[’ exp ‘]’ ‘=’ exp | Name ‘=’ exp | exp
-
-// fieldsep ::= ‘,’ | ‘;’
-
-// binop ::=  ‘+’ | ‘-’ | ‘*’ | ‘/’ | ‘//’ | ‘^’ | ‘%’ | 
-//         ‘&’ | ‘~’ | ‘|’ | ‘>>’ | ‘<<’ | ‘..’ | 
-//         ‘<’ | ‘<=’ | ‘>’ | ‘>=’ | ‘==’ | ‘~=’ | 
-//         and | or
-
-// unop ::= ‘-’ | not | ‘#’ | ‘~’
 doBlockStatement: DO block END ;
 
 assignmentStatement: varlist '=' explist ;
-
 varlist: var (',' var)* ;
 explist: exp (',' exp)* ;
 
-declarationStatement: scopeSpec attrib? attnamelist ('=' explist)? ;
 
-globalAttribStatement: GLOBAL attrib '*' ; 
 
+// declarationStatement: scopeSpec attrib? attnamelist ('=' explist)? ;
+declarationStatement: scopeSpec attnamelist ('=' explist)? ;
 attnamelist: nameattr (',' nameattr)* ;
-nameattr: name attrib? ;
-attrib: '<' ATTRIBUTES_DEFINED '>' ;
+
+globalAttribStatement: GLOBAL ATTRIB ASTRIX_SIGN ; 
 
 scopeSpec: GLOBAL | LOCAL;
 
@@ -121,10 +70,6 @@ scopedFuncdefStatement: scopeSpec FUNCTION name funcbody;
 funcname: namespec (':' name)? ;
 namespec: name ('.' name)* ;
 funcbody: '(' paramlist? ')' block END ;
-
-paramlist: namelist (',' vararg)? | vararg ;
-vararg: '...' name? ;
-namelist: name (',' name)* ;
 
 whileStatement: WHILE exp DO block END ;
 repeatStatement: REPEAT block UNTIL exp ;
@@ -142,13 +87,6 @@ funcCallStatement: funcCall ;
 funcAnon: FUNCTION funcbody;
 
 tableConstructor: '{' fieldlist '}' | '{' '}';
-fieldlist: field (FIELD_SEP field)* FIELD_SEP? ;
-FIELD_SEP: ',' | ';' ;
-field:
-    '[' exp ']' '=' exp
-    | name '=' exp
-    | exp
-;
 
 exp: 
     literal
@@ -161,15 +99,15 @@ exp:
 opExp: orExp;
 orExp: andExp (OR andExp)* ;
 andExp: compExp (AND compExp)* ;
-compExp: bitorExp (COMPOP bitorExp)? ;
+compExp: bitorExp (compop bitorExp)? ;
 bitorExp: bitxorExp ('|' bitxorExp)* ;
-bitxorExp: bitandExp ('~' bitandExp)* ;
+bitxorExp: bitandExp (TILDA_SIGN bitandExp)* ;
 bitandExp: shiftExp ('&' shiftExp)* ;
-shiftExp: concatExp (SHIFTOP concatExp)* ;
+shiftExp: concatExp (shiftop concatExp)* ;
 concatExp: plusExp ('..' plusExp)* ;
-plusExp: mulExp (PLUSOP mulExp)* ;
-mulExp: unaryExp (MULOP unaryExp)* ;
-unaryExp: powExp | UNOP unaryExp;
+plusExp: mulExp (plusop mulExp)* ;
+mulExp: unaryExp (mulop unaryExp)* ;
+unaryExp: powExp | unop unaryExp;
 powExp: opStartExp ('^' powExp)? ;
 
 opStartExp: 
@@ -177,12 +115,6 @@ opStartExp:
     | literal
     | tableConstructor
 ;
-
-COMPOP: '<' | '<=' | '>' | '>=' | '==' | '~=' ; 
-SHIFTOP: '<<' | '>>' ;
-PLUSOP: '+' | '-' ;
-MULOP: '*' | '/' | '//' | '%' ;
-UNOP: NOT | '#' | '-' | '~' ; 
 
 literal: 
     NIL 
@@ -194,7 +126,7 @@ literal:
 
 prefixexp: 
     var
-    | '(' exp ')'
+    | bracketExp
     | funcCall
 ;
 
@@ -203,7 +135,7 @@ prefixexp:
 //
 funcCall: 
     var (funcCall_tail)+
-    | '(' exp ')' (funcCall_tail)+
+    | bracketExp (funcCall_tail)+
 ;
 
 funcCall_tail: 
@@ -211,15 +143,17 @@ funcCall_tail:
     | ':' name args
 ;
 
-args: '(' explist? ')' ;
+
 
 // x
 // (obj1 + obj2).field
 // (func())["result"]
 var: 
     name (var_tail)*
-    | '(' exp ')' (var_tail)+
+    | bracketExp (var_tail)+
 ;
+
+bracketExp: '(' exp ')';
 
 var_tail:
     '[' exp ']'
@@ -227,6 +161,55 @@ var_tail:
 ;
 
 name: ID;
+
+
+nameattr: name ATTRIB? ;
+
+ATTRIB: TR_OPEN ATTRIBUTES_DEFINED TR_CLOSE ;
+
+paramlist: namelist (',' vararg)? | vararg ;
+vararg: '...' name? ;
+namelist: name (',' name)* ;
+
+args: '(' explist? ')' ;
+
+fieldlist: field (FIELD_SEP field)* FIELD_SEP? ;
+FIELD_SEP: ',' | ';' ;
+field:
+    '[' exp ']' '=' exp
+    | name '=' exp
+    | exp
+;
+
+unop: NOT | HASH_SIGN | MINUS_SIGN | TILDA_SIGN ; 
+mulop: ASTRIX_SIGN | SLASH_SIGN | DOUBLESLASH_SIGN | PERCENT_SIGN ;
+plusop: PLUS_SIGN | MINUS_SIGN ;
+shiftop: SHLEFT_SIGN | SHRIGHT_SIGN ;
+compop: TR_OPEN | LEQ_SIGN | TR_CLOSE | GEQ_SIGN | DOUBLEEQ_SIGN | NEQ_SIGN ; 
+
+PLUS_SIGN: '+';
+MINUS_SIGN: '-' ;
+TILDA_SIGN: '~' ;
+HASH_SIGN: '#';
+ASTRIX_SIGN: '*';
+SLASH_SIGN: '/';
+DOUBLESLASH_SIGN: '//';
+PERCENT_SIGN: '%';
+SHLEFT_SIGN: '<<';
+SHRIGHT_SIGN: '>>';
+
+LEQ_SIGN: '<=';
+GEQ_SIGN: '>=';
+DOUBLEEQ_SIGN: '==';
+NEQ_SIGN: '~=';
+
+EQ_SIGN: '=';
+
+TR_OPEN: '<';
+TR_CLOSE: '>';
+
+
+
 ATTRIBUTES_DEFINED: CONST;
 
 
@@ -265,7 +248,7 @@ GLOBAL: 'global' ;
 
 CONST: 'const' ;
 
-NUMBER: [0-9]+ ('.' [0-9]+)? ;
+NUMBER: (MINUS_SIGN)? [0-9]+ ('.' [0-9]+)? ;
 STRING: '"' ( '\\"' | ~["\r\n] )* '"' ;
 UNTERMINATED_STRING: '"' ( '\\"' | ~["\r\n] )* 
     { 

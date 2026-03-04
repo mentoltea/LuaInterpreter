@@ -29,7 +29,7 @@ if(NOT ANTLR4_RUNTIME_LIB)
 endif()
 
 set(GRAMMAR_FILE ${CMAKE_CURRENT_SOURCE_DIR}/Lua55Grammar.g4)
-set(GENERATED_SRC_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated)
+set(GENERATED_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/generated)
 
 set(GENERATED_FILES
     ${GENERATED_SRC_DIR}/Lua55GrammarLexer.cpp
@@ -46,7 +46,6 @@ set_source_files_properties(${GENERATED_FILES} PROPERTIES GENERATED TRUE)
 
 add_custom_command(
     OUTPUT ${GENERATED_FILES}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${GENERATED_SRC_DIR}
     COMMAND ${ANTLR4_TOOL} -Dlanguage=Cpp -o ${GENERATED_SRC_DIR} ${GRAMMAR_FILE}
     DEPENDS ${GRAMMAR_FILE}
     COMMENT "Generating ANTLR4 parsers and lexers"
@@ -70,7 +69,7 @@ add_executable(
     ${GENERATED_FILES}
 )
 
-# add_dependencies("luai" generate_antlr)
+add_dependencies("luai" generate_antlr)
 
 target_include_directories(
     "luai" PRIVATE

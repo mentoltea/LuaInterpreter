@@ -14,14 +14,17 @@ public:
   enum {
     T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, T__6 = 7, 
     T__7 = 8, T__8 = 9, T__9 = 10, T__10 = 11, T__11 = 12, T__12 = 13, T__13 = 14, 
-    T__14 = 15, T__15 = 16, T__16 = 17, T__17 = 18, T__18 = 19, T__19 = 20, 
-    T__20 = 21, FIELD_SEP = 22, COMPOP = 23, SHIFTOP = 24, PLUSOP = 25, 
-    MULOP = 26, UNOP = 27, ATTRIBUTES_DEFINED = 28, DO = 29, END = 30, AND = 31, 
-    OR = 32, NOT = 33, IF = 34, ELSEIF = 35, ELSE = 36, THEN = 37, WHILE = 38, 
-    REPEAT = 39, UNTIL = 40, FOR = 41, IN = 42, BREAK = 43, GOTO = 44, RETURN = 45, 
-    FUNCTION = 46, NIL = 47, TRUE = 48, FALSE = 49, LOCAL = 50, GLOBAL = 51, 
-    CONST = 52, NUMBER = 53, STRING = 54, UNTERMINATED_STRING = 55, ID = 56, 
-    WS = 57, LINE_COMMENT = 58, BLOCK_COMMENT = 59
+    T__14 = 15, T__15 = 16, ATTRIB = 17, FIELD_SEP = 18, PLUS_SIGN = 19, 
+    MINUS_SIGN = 20, TILDA_SIGN = 21, HASH_SIGN = 22, ASTRIX_SIGN = 23, 
+    SLASH_SIGN = 24, DOUBLESLASH_SIGN = 25, PERCENT_SIGN = 26, SHLEFT_SIGN = 27, 
+    SHRIGHT_SIGN = 28, LEQ_SIGN = 29, GEQ_SIGN = 30, DOUBLEEQ_SIGN = 31, 
+    NEQ_SIGN = 32, EQ_SIGN = 33, TR_OPEN = 34, TR_CLOSE = 35, ATTRIBUTES_DEFINED = 36, 
+    DO = 37, END = 38, AND = 39, OR = 40, NOT = 41, IF = 42, ELSEIF = 43, 
+    ELSE = 44, THEN = 45, WHILE = 46, REPEAT = 47, UNTIL = 48, FOR = 49, 
+    IN = 50, BREAK = 51, GOTO = 52, RETURN = 53, FUNCTION = 54, NIL = 55, 
+    TRUE = 56, FALSE = 57, LOCAL = 58, GLOBAL = 59, CONST = 60, NUMBER = 61, 
+    STRING = 62, UNTERMINATED_STRING = 63, ID = 64, WS = 65, LINE_COMMENT = 66, 
+    BLOCK_COMMENT = 67
   };
 
   explicit Lua55GrammarLexer(antlr4::CharStream *input);

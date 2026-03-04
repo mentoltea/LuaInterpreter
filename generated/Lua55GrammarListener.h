@@ -41,17 +41,11 @@ public:
   virtual void enterDeclarationStatement(Lua55GrammarParser::DeclarationStatementContext *ctx) = 0;
   virtual void exitDeclarationStatement(Lua55GrammarParser::DeclarationStatementContext *ctx) = 0;
 
-  virtual void enterGlobalAttribStatement(Lua55GrammarParser::GlobalAttribStatementContext *ctx) = 0;
-  virtual void exitGlobalAttribStatement(Lua55GrammarParser::GlobalAttribStatementContext *ctx) = 0;
-
   virtual void enterAttnamelist(Lua55GrammarParser::AttnamelistContext *ctx) = 0;
   virtual void exitAttnamelist(Lua55GrammarParser::AttnamelistContext *ctx) = 0;
 
-  virtual void enterNameattr(Lua55GrammarParser::NameattrContext *ctx) = 0;
-  virtual void exitNameattr(Lua55GrammarParser::NameattrContext *ctx) = 0;
-
-  virtual void enterAttrib(Lua55GrammarParser::AttribContext *ctx) = 0;
-  virtual void exitAttrib(Lua55GrammarParser::AttribContext *ctx) = 0;
+  virtual void enterGlobalAttribStatement(Lua55GrammarParser::GlobalAttribStatementContext *ctx) = 0;
+  virtual void exitGlobalAttribStatement(Lua55GrammarParser::GlobalAttribStatementContext *ctx) = 0;
 
   virtual void enterScopeSpec(Lua55GrammarParser::ScopeSpecContext *ctx) = 0;
   virtual void exitScopeSpec(Lua55GrammarParser::ScopeSpecContext *ctx) = 0;
@@ -73,15 +67,6 @@ public:
 
   virtual void enterFuncbody(Lua55GrammarParser::FuncbodyContext *ctx) = 0;
   virtual void exitFuncbody(Lua55GrammarParser::FuncbodyContext *ctx) = 0;
-
-  virtual void enterParamlist(Lua55GrammarParser::ParamlistContext *ctx) = 0;
-  virtual void exitParamlist(Lua55GrammarParser::ParamlistContext *ctx) = 0;
-
-  virtual void enterVararg(Lua55GrammarParser::VarargContext *ctx) = 0;
-  virtual void exitVararg(Lua55GrammarParser::VarargContext *ctx) = 0;
-
-  virtual void enterNamelist(Lua55GrammarParser::NamelistContext *ctx) = 0;
-  virtual void exitNamelist(Lua55GrammarParser::NamelistContext *ctx) = 0;
 
   virtual void enterWhileStatement(Lua55GrammarParser::WhileStatementContext *ctx) = 0;
   virtual void exitWhileStatement(Lua55GrammarParser::WhileStatementContext *ctx) = 0;
@@ -118,12 +103,6 @@ public:
 
   virtual void enterTableConstructor(Lua55GrammarParser::TableConstructorContext *ctx) = 0;
   virtual void exitTableConstructor(Lua55GrammarParser::TableConstructorContext *ctx) = 0;
-
-  virtual void enterFieldlist(Lua55GrammarParser::FieldlistContext *ctx) = 0;
-  virtual void exitFieldlist(Lua55GrammarParser::FieldlistContext *ctx) = 0;
-
-  virtual void enterField(Lua55GrammarParser::FieldContext *ctx) = 0;
-  virtual void exitField(Lua55GrammarParser::FieldContext *ctx) = 0;
 
   virtual void enterExp(Lua55GrammarParser::ExpContext *ctx) = 0;
   virtual void exitExp(Lua55GrammarParser::ExpContext *ctx) = 0;
@@ -182,17 +161,53 @@ public:
   virtual void enterFuncCall_tail(Lua55GrammarParser::FuncCall_tailContext *ctx) = 0;
   virtual void exitFuncCall_tail(Lua55GrammarParser::FuncCall_tailContext *ctx) = 0;
 
-  virtual void enterArgs(Lua55GrammarParser::ArgsContext *ctx) = 0;
-  virtual void exitArgs(Lua55GrammarParser::ArgsContext *ctx) = 0;
-
   virtual void enterVar(Lua55GrammarParser::VarContext *ctx) = 0;
   virtual void exitVar(Lua55GrammarParser::VarContext *ctx) = 0;
+
+  virtual void enterBracketExp(Lua55GrammarParser::BracketExpContext *ctx) = 0;
+  virtual void exitBracketExp(Lua55GrammarParser::BracketExpContext *ctx) = 0;
 
   virtual void enterVar_tail(Lua55GrammarParser::Var_tailContext *ctx) = 0;
   virtual void exitVar_tail(Lua55GrammarParser::Var_tailContext *ctx) = 0;
 
   virtual void enterName(Lua55GrammarParser::NameContext *ctx) = 0;
   virtual void exitName(Lua55GrammarParser::NameContext *ctx) = 0;
+
+  virtual void enterNameattr(Lua55GrammarParser::NameattrContext *ctx) = 0;
+  virtual void exitNameattr(Lua55GrammarParser::NameattrContext *ctx) = 0;
+
+  virtual void enterParamlist(Lua55GrammarParser::ParamlistContext *ctx) = 0;
+  virtual void exitParamlist(Lua55GrammarParser::ParamlistContext *ctx) = 0;
+
+  virtual void enterVararg(Lua55GrammarParser::VarargContext *ctx) = 0;
+  virtual void exitVararg(Lua55GrammarParser::VarargContext *ctx) = 0;
+
+  virtual void enterNamelist(Lua55GrammarParser::NamelistContext *ctx) = 0;
+  virtual void exitNamelist(Lua55GrammarParser::NamelistContext *ctx) = 0;
+
+  virtual void enterArgs(Lua55GrammarParser::ArgsContext *ctx) = 0;
+  virtual void exitArgs(Lua55GrammarParser::ArgsContext *ctx) = 0;
+
+  virtual void enterFieldlist(Lua55GrammarParser::FieldlistContext *ctx) = 0;
+  virtual void exitFieldlist(Lua55GrammarParser::FieldlistContext *ctx) = 0;
+
+  virtual void enterField(Lua55GrammarParser::FieldContext *ctx) = 0;
+  virtual void exitField(Lua55GrammarParser::FieldContext *ctx) = 0;
+
+  virtual void enterUnop(Lua55GrammarParser::UnopContext *ctx) = 0;
+  virtual void exitUnop(Lua55GrammarParser::UnopContext *ctx) = 0;
+
+  virtual void enterMulop(Lua55GrammarParser::MulopContext *ctx) = 0;
+  virtual void exitMulop(Lua55GrammarParser::MulopContext *ctx) = 0;
+
+  virtual void enterPlusop(Lua55GrammarParser::PlusopContext *ctx) = 0;
+  virtual void exitPlusop(Lua55GrammarParser::PlusopContext *ctx) = 0;
+
+  virtual void enterShiftop(Lua55GrammarParser::ShiftopContext *ctx) = 0;
+  virtual void exitShiftop(Lua55GrammarParser::ShiftopContext *ctx) = 0;
+
+  virtual void enterCompop(Lua55GrammarParser::CompopContext *ctx) = 0;
+  virtual void exitCompop(Lua55GrammarParser::CompopContext *ctx) = 0;
 
 
 };

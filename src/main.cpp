@@ -30,17 +30,18 @@ int main(int argc, char** argv) {
     // std::cout << tree->toStringTree() << std::endl;
 
     Lua55Listener listener;
+    // Lua55GrammarBaseListener listener;
     antlr4::tree::ParseTreeWalker::DEFAULT.walk(&listener, tree);
     auto ast = listener.ast;
     
     std::cout << "AST contructed" << std::endl << std::endl;
     ast->print(std::cout, 0);
 
-    // bool int_success = Interpreter::interpret(ast);
-    // if (int_success == false) {
-    //     std::cerr << "INTERPRETING ERROR" << std::endl;
-    //     return 1;
-    // }
+    // // bool int_success = Interpreter::interpret(ast);
+    // // if (int_success == false) {
+    // //     std::cerr << "INTERPRETING ERROR" << std::endl;
+    // //     return 1;
+    // // }
 
     std::cout << std::endl << "Success" << std::endl;
 

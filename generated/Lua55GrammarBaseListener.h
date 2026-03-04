@@ -43,17 +43,11 @@ public:
   virtual void enterDeclarationStatement(Lua55GrammarParser::DeclarationStatementContext * /*ctx*/) override { }
   virtual void exitDeclarationStatement(Lua55GrammarParser::DeclarationStatementContext * /*ctx*/) override { }
 
-  virtual void enterGlobalAttribStatement(Lua55GrammarParser::GlobalAttribStatementContext * /*ctx*/) override { }
-  virtual void exitGlobalAttribStatement(Lua55GrammarParser::GlobalAttribStatementContext * /*ctx*/) override { }
-
   virtual void enterAttnamelist(Lua55GrammarParser::AttnamelistContext * /*ctx*/) override { }
   virtual void exitAttnamelist(Lua55GrammarParser::AttnamelistContext * /*ctx*/) override { }
 
-  virtual void enterNameattr(Lua55GrammarParser::NameattrContext * /*ctx*/) override { }
-  virtual void exitNameattr(Lua55GrammarParser::NameattrContext * /*ctx*/) override { }
-
-  virtual void enterAttrib(Lua55GrammarParser::AttribContext * /*ctx*/) override { }
-  virtual void exitAttrib(Lua55GrammarParser::AttribContext * /*ctx*/) override { }
+  virtual void enterGlobalAttribStatement(Lua55GrammarParser::GlobalAttribStatementContext * /*ctx*/) override { }
+  virtual void exitGlobalAttribStatement(Lua55GrammarParser::GlobalAttribStatementContext * /*ctx*/) override { }
 
   virtual void enterScopeSpec(Lua55GrammarParser::ScopeSpecContext * /*ctx*/) override { }
   virtual void exitScopeSpec(Lua55GrammarParser::ScopeSpecContext * /*ctx*/) override { }
@@ -75,15 +69,6 @@ public:
 
   virtual void enterFuncbody(Lua55GrammarParser::FuncbodyContext * /*ctx*/) override { }
   virtual void exitFuncbody(Lua55GrammarParser::FuncbodyContext * /*ctx*/) override { }
-
-  virtual void enterParamlist(Lua55GrammarParser::ParamlistContext * /*ctx*/) override { }
-  virtual void exitParamlist(Lua55GrammarParser::ParamlistContext * /*ctx*/) override { }
-
-  virtual void enterVararg(Lua55GrammarParser::VarargContext * /*ctx*/) override { }
-  virtual void exitVararg(Lua55GrammarParser::VarargContext * /*ctx*/) override { }
-
-  virtual void enterNamelist(Lua55GrammarParser::NamelistContext * /*ctx*/) override { }
-  virtual void exitNamelist(Lua55GrammarParser::NamelistContext * /*ctx*/) override { }
 
   virtual void enterWhileStatement(Lua55GrammarParser::WhileStatementContext * /*ctx*/) override { }
   virtual void exitWhileStatement(Lua55GrammarParser::WhileStatementContext * /*ctx*/) override { }
@@ -120,12 +105,6 @@ public:
 
   virtual void enterTableConstructor(Lua55GrammarParser::TableConstructorContext * /*ctx*/) override { }
   virtual void exitTableConstructor(Lua55GrammarParser::TableConstructorContext * /*ctx*/) override { }
-
-  virtual void enterFieldlist(Lua55GrammarParser::FieldlistContext * /*ctx*/) override { }
-  virtual void exitFieldlist(Lua55GrammarParser::FieldlistContext * /*ctx*/) override { }
-
-  virtual void enterField(Lua55GrammarParser::FieldContext * /*ctx*/) override { }
-  virtual void exitField(Lua55GrammarParser::FieldContext * /*ctx*/) override { }
 
   virtual void enterExp(Lua55GrammarParser::ExpContext * /*ctx*/) override { }
   virtual void exitExp(Lua55GrammarParser::ExpContext * /*ctx*/) override { }
@@ -184,17 +163,53 @@ public:
   virtual void enterFuncCall_tail(Lua55GrammarParser::FuncCall_tailContext * /*ctx*/) override { }
   virtual void exitFuncCall_tail(Lua55GrammarParser::FuncCall_tailContext * /*ctx*/) override { }
 
-  virtual void enterArgs(Lua55GrammarParser::ArgsContext * /*ctx*/) override { }
-  virtual void exitArgs(Lua55GrammarParser::ArgsContext * /*ctx*/) override { }
-
   virtual void enterVar(Lua55GrammarParser::VarContext * /*ctx*/) override { }
   virtual void exitVar(Lua55GrammarParser::VarContext * /*ctx*/) override { }
+
+  virtual void enterBracketExp(Lua55GrammarParser::BracketExpContext * /*ctx*/) override { }
+  virtual void exitBracketExp(Lua55GrammarParser::BracketExpContext * /*ctx*/) override { }
 
   virtual void enterVar_tail(Lua55GrammarParser::Var_tailContext * /*ctx*/) override { }
   virtual void exitVar_tail(Lua55GrammarParser::Var_tailContext * /*ctx*/) override { }
 
   virtual void enterName(Lua55GrammarParser::NameContext * /*ctx*/) override { }
   virtual void exitName(Lua55GrammarParser::NameContext * /*ctx*/) override { }
+
+  virtual void enterNameattr(Lua55GrammarParser::NameattrContext * /*ctx*/) override { }
+  virtual void exitNameattr(Lua55GrammarParser::NameattrContext * /*ctx*/) override { }
+
+  virtual void enterParamlist(Lua55GrammarParser::ParamlistContext * /*ctx*/) override { }
+  virtual void exitParamlist(Lua55GrammarParser::ParamlistContext * /*ctx*/) override { }
+
+  virtual void enterVararg(Lua55GrammarParser::VarargContext * /*ctx*/) override { }
+  virtual void exitVararg(Lua55GrammarParser::VarargContext * /*ctx*/) override { }
+
+  virtual void enterNamelist(Lua55GrammarParser::NamelistContext * /*ctx*/) override { }
+  virtual void exitNamelist(Lua55GrammarParser::NamelistContext * /*ctx*/) override { }
+
+  virtual void enterArgs(Lua55GrammarParser::ArgsContext * /*ctx*/) override { }
+  virtual void exitArgs(Lua55GrammarParser::ArgsContext * /*ctx*/) override { }
+
+  virtual void enterFieldlist(Lua55GrammarParser::FieldlistContext * /*ctx*/) override { }
+  virtual void exitFieldlist(Lua55GrammarParser::FieldlistContext * /*ctx*/) override { }
+
+  virtual void enterField(Lua55GrammarParser::FieldContext * /*ctx*/) override { }
+  virtual void exitField(Lua55GrammarParser::FieldContext * /*ctx*/) override { }
+
+  virtual void enterUnop(Lua55GrammarParser::UnopContext * /*ctx*/) override { }
+  virtual void exitUnop(Lua55GrammarParser::UnopContext * /*ctx*/) override { }
+
+  virtual void enterMulop(Lua55GrammarParser::MulopContext * /*ctx*/) override { }
+  virtual void exitMulop(Lua55GrammarParser::MulopContext * /*ctx*/) override { }
+
+  virtual void enterPlusop(Lua55GrammarParser::PlusopContext * /*ctx*/) override { }
+  virtual void exitPlusop(Lua55GrammarParser::PlusopContext * /*ctx*/) override { }
+
+  virtual void enterShiftop(Lua55GrammarParser::ShiftopContext * /*ctx*/) override { }
+  virtual void exitShiftop(Lua55GrammarParser::ShiftopContext * /*ctx*/) override { }
+
+  virtual void enterCompop(Lua55GrammarParser::CompopContext * /*ctx*/) override { }
+  virtual void exitCompop(Lua55GrammarParser::CompopContext * /*ctx*/) override { }
 
 
   virtual void enterEveryRule(antlr4::ParserRuleContext * /*ctx*/) override { }

@@ -41,7 +41,7 @@ struct Attribute: public Node {
         CONST,
     } kind;
     Attribute(const std::string& str) {
-        if (str == "const") kind = Kind::CONST;
+        if (str == "<const>") kind = Kind::CONST;
         else {
             throw std::runtime_error("Unexpected attribute: " + str);
         }

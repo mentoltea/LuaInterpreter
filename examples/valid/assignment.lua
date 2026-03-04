@@ -1,7 +1,7 @@
 -- Простые переменные
 local x = 10
 local name = "Lua"
-local a, b, c = 1, 2, 3
+local a, b, c = 1, -x, -3
 
 -- Глобальные переменные
 y = 20
