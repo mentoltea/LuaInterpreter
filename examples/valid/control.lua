@@ -1,8 +1,7 @@
--- If-else
-local x = (x > 10)
-if (x > 10) then
+
+if (true) then
     print("x > 10")
-elseif x > 5 then
+elseif (x > 5) then
     print("5 < x <= 10")
 else
     print("x <= 5")
@@ -21,7 +20,7 @@ local j = 1
 repeat
     io.write(j .. " ")
     j = j + 1
-until j > 5
+until ( j > 5 );
 io.write("\n")
 
 -- Numeric for

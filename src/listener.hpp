@@ -70,6 +70,10 @@ class Lua55Listener: public Lua55GrammarBaseListener {
         
         st->prev = frame.last;
         frame.last = st;
+
+        std::cout << "statement ";
+        st->print(std::cout);
+        std::cout << std::endl;
     }
     
     virtual void exitDoBlockStatement(Lua55GrammarParser::DoBlockStatementContext * ctx) override {
@@ -306,8 +310,9 @@ class Lua55Listener: public Lua55GrammarBaseListener {
 
         st->from = std::shared_ptr<Expression>(exps[0]);
         st->to   = std::shared_ptr<Expression>(exps[1]);
-        st->step = std::shared_ptr<Expression>(exps[2]);
-    
+        if (exps[2])
+            st->step = std::shared_ptr<Expression>(exps[2]);
+
         st->var = ctx->name()->ID()->toString();
 
         state.stack.push(st);
@@ -424,6 +429,8 @@ class Lua55Listener: public Lua55GrammarBaseListener {
             // name = exp
             field->kind = Field::Kind::NAMED;
             field->name = ctx->name()->ID()->toString();
+            field->rhs = std::shared_ptr<Expression>((Expression*) state.stack.top());
+            state.stack.pop();
         } else {
             // exp
             field->kind = Field::Kind::SINGLE;
@@ -437,8 +444,9 @@ class Lua55Listener: public Lua55GrammarBaseListener {
     virtual void exitExp(Lua55GrammarParser::ExpContext * ctx) override {
         // std::cout << "exitExp" << std::endl; 
         
-        // state.stack.top()->print(// std::cout);
-        
+        std::cout << "expression ";
+        state.stack.top()->print(std::cout);
+        std::cout << std::endl;
     }
     
     virtual void exitOpExp(Lua55GrammarParser::OpExpContext * ctx) override { 

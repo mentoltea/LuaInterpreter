@@ -28,9 +28,8 @@ if(NOT ANTLR4_RUNTIME_LIB)
     message(FATAL_ERROR "ANTLR4 runtime library not found in ${ANTLR4_LIB_DIR}")
 endif()
 
-
 set(GRAMMAR_FILE ${CMAKE_CURRENT_SOURCE_DIR}/Lua55Grammar.g4)
-set(GENERATED_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/generated)
+set(GENERATED_SRC_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated)
 
 set(GENERATED_FILES
     ${GENERATED_SRC_DIR}/Lua55GrammarLexer.cpp
@@ -41,14 +40,13 @@ set(GENERATED_FILES
     ${GENERATED_SRC_DIR}/Lua55GrammarBaseListener.h
     ${GENERATED_SRC_DIR}/Lua55GrammarListener.cpp
     ${GENERATED_SRC_DIR}/Lua55GrammarListener.h
-    ${GENERATED_SRC_DIR}/Lua55GrammarBaseVisitor.cpp
-    ${GENERATED_SRC_DIR}/Lua55GrammarBaseVisitor.h
-    ${GENERATED_SRC_DIR}/Lua55GrammarVisitor.cpp
-    ${GENERATED_SRC_DIR}/Lua55GrammarVisitor.h
 )
+
+set_source_files_properties(${GENERATED_FILES} PROPERTIES GENERATED TRUE)
 
 add_custom_command(
     OUTPUT ${GENERATED_FILES}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${GENERATED_SRC_DIR}
     COMMAND ${ANTLR4_TOOL} -Dlanguage=Cpp -o ${GENERATED_SRC_DIR} ${GRAMMAR_FILE}
     DEPENDS ${GRAMMAR_FILE}
     COMMENT "Generating ANTLR4 parsers and lexers"
@@ -58,26 +56,18 @@ add_custom_command(
 add_custom_target(generate_antlr DEPENDS ${GENERATED_FILES})
 
 file(GLOB_RECURSE SRC_FILES 
-    CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
 )
 
-file(GLOB_RECURSE GENERATED_SRC_FILES 
-    CONFIGURE_DEPENDS
-    ${GENERATED_FILES}
-)
-
 file(GLOB_RECURSE HEADER_FILES
-    CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/**.hpp"
-    "${GENERATED_SRC_DIR}/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.hpp"
 )
 
 add_executable(
     "luai"
     ${SRC_FILES}
-    ${GENERATED_SRC_FILES}
+    ${GENERATED_FILES}
 )
 
 # add_dependencies("luai" generate_antlr)
@@ -97,18 +87,11 @@ target_link_libraries(
 
 target_compile_options(
     "luai" PRIVATE
-    -Wall 
-    -Wextra
+    -Wall -Wextra
     -Wno-unused-parameter
-)
-
-target_compile_options(
-    "luai" PRIVATE
-    -ggdb
-    -O0
+    -ggdb -O0
 )
 
 message(STATUS "ANTLR4 include dir: ${ANTLR4_INCLUDE_DIR}")
 message(STATUS "ANTLR4 library: ${ANTLR4_RUNTIME_LIB}")
 message(STATUS "Source files found: ${SRC_FILES}")
-message(STATUS "Generated source files: ${GENERATED_SRC_FILES}")

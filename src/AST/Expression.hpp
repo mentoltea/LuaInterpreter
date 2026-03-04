@@ -45,7 +45,7 @@ struct Literal: public Expression {
     Type type() const { return Type::LITERAL; }
 
     virtual void print(std::ostream &os, int tabs = 0) const {
-        os << "literal( ";
+        // os << "LIT( ";
         switch (kind) {
 
         case Kind::NIL: { os << "nil"; } break;
@@ -65,15 +65,55 @@ struct Literal: public Expression {
         default:
             break;
         }    
-        os << " )";
+        // os << " )";
     };
 };
 
+struct FuncName: public Node {
+    std::string base;
+    // .x.y.z
+    std::vector< std::string > specifications;
+    // :new
+    std::string kind;
+
+    virtual void print(std::ostream &os, int tabs = 0) const {
+        os << base << " ";
+        for (auto &spec: specifications) {
+            os << "." << spec;
+        }
+        if (!kind.empty()) os << ":" << kind;
+    }
+};
+
+struct FuncBody: public Node {
+    std::vector< std::string > params;
+    bool variadic;
+    std::optional<std::string> variadic_param;
+
+    std::shared_ptr< Block > block;
+
+    virtual void print(std::ostream &os, int tabs = 0) const {
+        os << "(";
+        for (auto &param: params) os << param << ", ";
+        if (variadic) {
+            os << "...";
+            if (variadic_param.has_value()) os << variadic_param.value();
+        }
+        os << ")" << std::endl;
+        block->print(os, tabs+1);
+        insert_tabs(os, tabs);
+        os << "end"; 
+    }
+};
 
 struct FuncAnon: public Expression {
     std::shared_ptr< FuncBody > body;
 
     Type type() const { return Type::FUNC_ANON; }
+
+    virtual void print(std::ostream &os, int tabs = 0) const {
+        body->print(os, tabs);
+    }
 };
 
 
@@ -88,10 +128,42 @@ struct Field: public Node {
 
     std::shared_ptr<Expression> lhs;
     std::shared_ptr<Expression> rhs;
+
+    virtual void print(std::ostream &os, int tabs = 0) const {
+        switch (kind) {
+        case Kind::INDEXED: {
+            os << "[";
+            lhs->print(os, tabs);
+            os << "] = ";
+            rhs->print(os, tabs);
+        } break;
+        case Kind::NAMED: {
+            os << name << " = ";
+            rhs->print(os, tabs);
+        } break;
+        case Kind::SINGLE: {
+            lhs->print(os, tabs);
+        } break;
+        
+        default:
+            break;
+        }
+    }
 };
 struct TableConstr: public Expression {
     std::vector< std::shared_ptr<Field> > fields;
     Type type() const { return Type::TABLE_CONSTR; }
+
+    virtual void print(std::ostream &os, int tabs = 0) const {
+        os << "{" << std::endl;
+        for (auto &field: fields) {
+            insert_tabs(os, tabs+1);
+            field->print(os, tabs+1);
+            os << ";" << std::endl;
+        }
+        insert_tabs(os, tabs);
+        os << "}";
+    }
 };
 
 struct Operation: public Expression {
@@ -110,11 +182,11 @@ struct Operation: public Expression {
         os << "(";
         if (kind == Kind::UNOP) {
             os << operat;
-            lhs->print(os);
+            lhs->print(os, tabs);
         } else {
-            lhs->print(os);
+            lhs->print(os, tabs);
             os << " " << operat << " ";
-            rhs->print(os);
+            rhs->print(os, tabs);
         }
         os << ")";
     }
@@ -129,22 +201,27 @@ struct VarPart: public Node {
         NAME,
         EXP
     } kind;
+    virtual void print(std::ostream &os, int tabs, bool first) const {}
 };
 struct VarPartName: public VarPart {
     std::string name;
     VarPartName(std::string name): name(name) {}
-    void print(std::ostream &os, int tabs = 0) const {
-        os << ".";
+    void print(std::ostream &os, int tabs, bool first) const {
+        if (!first) os << ".";
         os << name;
     }
 };
 struct VarPartExp: public VarPart {
     std::shared_ptr<Expression> exp;
     VarPartExp(std::shared_ptr<Expression> exp): exp(exp) {}
-    void print(std::ostream &os, int tabs = 0) const {
-        os << "[";
+    void print(std::ostream &os, int tabs, bool first) const {
+        if (first) os << "(";
+        else os << "[";
+        
         exp->print(os, tabs);
-        os << "]";
+
+        if (first) os << ")";
+        else os << "]";
     }
 };
 
@@ -156,9 +233,9 @@ struct Var: public Expression {
 
     Type type() const { return Type::VAR; }
     void print(std::ostream &os, int tabs = 0) const {
-        base->print(os, tabs);
+        base->print(os, tabs, true);
         for (auto &spec: specifications) {
-            spec->print(os, tabs);
+            spec->print(os, tabs, false);
         }
     }
 };
@@ -174,7 +251,7 @@ struct FuncCallTail: public Node {
         }
         os << "(";
         for (auto& arg: args) {
-            arg->print(os);
+            arg->print(os, tabs);
             os << ",";
         }
         os << ")";
@@ -186,9 +263,9 @@ struct FuncCall: public Expression {
     std::vector< std::shared_ptr<FuncCallTail> > tails;
 
     void print(std::ostream &os, int tabs = 0) const {
-        function->print(os);
+        function->print(os, tabs);
         for (auto& tail: tails) {
-            tail->print(os);
+            tail->print(os, tabs);
         }
     }
 

@@ -27,13 +27,13 @@ int main(int argc, char** argv) {
     Lua55GrammarParser parser(&tokens);    
     antlr4::tree::ParseTree* tree = parser.prog();
     
-    std::cout << tree->toStringTree() << std::endl;
+    // std::cout << tree->toStringTree() << std::endl;
 
     Lua55Listener listener;
     antlr4::tree::ParseTreeWalker::DEFAULT.walk(&listener, tree);
     auto ast = listener.ast;
     
-    std::cout << "AST contructed" << std::endl;
+    std::cout << "AST contructed" << std::endl << std::endl;
     ast->print(std::cout, 0);
 
     // bool int_success = Interpreter::interpret(ast);
@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
     //     return 1;
     // }
 
-    std::cout << "Success" << std::endl;
+    std::cout << std::endl << "Success" << std::endl;
 
     return 0;
 }
