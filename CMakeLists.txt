@@ -64,13 +64,13 @@ file(GLOB_RECURSE SRC_FILES
 
 file(GLOB_RECURSE GENERATED_SRC_FILES 
     CONFIGURE_DEPENDS
-    "${GENERATED_SRC_DIR}/*.cpp"
+    ${GENERATED_FILES}
 )
 
 file(GLOB_RECURSE HEADER_FILES
     CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/**.hpp"
     "${GENERATED_SRC_DIR}/*.h"
 )
 
@@ -80,7 +80,7 @@ add_executable(
     ${GENERATED_SRC_FILES}
 )
 
-add_dependencies("luai" generate_antlr)
+# add_dependencies("luai" generate_antlr)
 
 target_include_directories(
     "luai" PRIVATE
@@ -104,7 +104,7 @@ target_compile_options(
 
 target_compile_options(
     "luai" PRIVATE
-    -g 
+    -ggdb
     -O0
 )
 

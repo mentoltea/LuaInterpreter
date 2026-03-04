@@ -59,6 +59,7 @@ struct Statement: public Node {
     Statement* prev;
     Statement* next;
 
+    Statement(): parent(nullptr), prev(nullptr), next(nullptr) {}
     virtual Type type() const = 0;
 };
 
@@ -72,6 +73,8 @@ struct Block: public Node {
 
     Statement* parent;
     
+    Block(): parent(nullptr) {}
+
     virtual void print(std::ostream &os, int tabs = 0) const override {
         for (auto ptr: statements) {
             ptr->print(os, tabs+1);
@@ -116,7 +119,7 @@ struct Attribute {
         CONST,
     } kind;
     Attribute(const std::string& str) {
-        if (str == "CONST") kind = Kind::CONST;
+        if (str == "const") kind = Kind::CONST;
         else {
             throw std::runtime_error("Unexpected attribute: " + str);
         }
@@ -182,16 +185,16 @@ struct IfSt: public Statement {
 
     CondBlock branch_if;
     std::vector<CondBlock> branch_elseif;
-    std::optional<CondBlock> branch_else;
+    std::optional< std::shared_ptr<Block> > branch_else;
 
     Type type() const { return Type::IF; }
 };
 
 struct Num_forSt: public Statement {
     std::string var;
-    std::shared_ptr<Number> from;
-    std::shared_ptr<Number> to;
-    std::shared_ptr<Number> step;
+    std::shared_ptr<Expression> from;
+    std::shared_ptr<Expression> to;
+    std::shared_ptr<Expression> step;
 
     std::shared_ptr<Block> block;
 
@@ -200,7 +203,7 @@ struct Num_forSt: public Statement {
 
 struct Gen_forSt: public Statement {
     std::vector<std::string> vars;
-    std::vector< std::shared_ptr<Expression> > list;
+    std::vector< std::shared_ptr<Expression> > exps;
 
     std::shared_ptr<Block> block;
 
@@ -208,12 +211,14 @@ struct Gen_forSt: public Statement {
 };
 
 struct GotoSt: public Statement {
-    std::shared_ptr<LabelSt> label;
+    std::string label;
 
     Type type() const { return Type::GOTO; }
 };
 
 struct LabelSt: public Statement {
+    std::string label;
+
     Type type() const { return Type::LABEL; }
 };
 

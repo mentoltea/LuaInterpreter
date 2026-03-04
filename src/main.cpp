@@ -31,15 +31,18 @@ int main(int argc, char** argv) {
 
     Lua55Listener listener;
     antlr4::tree::ParseTreeWalker::DEFAULT.walk(&listener, tree);
-    // auto *ast = listener.ast;
+    auto ast = listener.ast;
+    
+    std::cout << "AST contructed" << std::endl;
+    ast->print(std::cout, 0);
 
     // bool int_success = Interpreter::interpret(ast);
     // if (int_success == false) {
     //     std::cerr << "INTERPRETING ERROR" << std::endl;
     //     return 1;
     // }
-    // std::cout << "Successfully interpreted" << std::endl;
-    
+
+    std::cout << "Success" << std::endl;
 
     return 0;
 }
