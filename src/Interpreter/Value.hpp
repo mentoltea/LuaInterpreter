@@ -2,6 +2,7 @@
 #define INTERPRETER_VALUE_H
 
 #include "Base.hpp"
+#include <cmath>
 
 namespace LuaInterpreter {
 
@@ -212,7 +213,7 @@ public:
 private:
     std::unordered_map< std::string , std::shared_ptr<Value> > string_table;
     std::unordered_map< std::int64_t , std::shared_ptr<Value> > int_table;
-    std::unordered_map< std::float64_t, std::shared_ptr<Value> > float_table;
+    // std::unordered_map< std::float64_t, std::shared_ptr<Value> > float_table;
     std::unordered_map< LuaAST::FuncBody* , std::shared_ptr<Value> > func_table;
     std::unordered_map< void* , std::shared_ptr<Value> > data_table;
 public:
@@ -226,11 +227,11 @@ public:
 
     std::shared_ptr<Value> at(const Number &key) {
         if (key.kind == Number::Kind::INT) return int_table.at(key.integer);
-        return float_table.at(key.floating);
+        return int_table.at( std::round( key.floating ) );
     }
     void set(const Number &key, std::shared_ptr<Value> value) {
         if (key.kind == Number::Kind::INT) int_table[key.integer] = value;
-        float_table[key.floating] = value;
+        int_table[ std::round(key.floating) ] = value;
     }
 
     std::shared_ptr<Value> at(const Function &key) {

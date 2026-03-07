@@ -1,7 +1,9 @@
 #ifndef INTERPRETER_H
 #define INTERPRETER_H
 
-#include "Base.hpp"
-#include "Value.hpp"
+#include "Interpreter/Base.hpp"
+#include "Interpreter/Value.hpp"
+
+#include "Interpreter/Static.hpp"
 
 #endif // INTERPRETER_H

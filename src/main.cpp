@@ -2,7 +2,7 @@
 #include "generated/Lua55GrammarLexer.h"
 #include "generated/Lua55GrammarParser.h"
 #include "generated/Lua55GrammarListener.h"
-
+#include "Interpreter.hpp"
 
 int main(int argc, char** argv) {
     if (argc < 2) {
@@ -36,6 +36,11 @@ int main(int argc, char** argv) {
     
     std::cout << "AST contructed" << std::endl << std::endl;
     ast->print(std::cout, 0);
+    std::cout  << std::endl << std::endl;
+    
+    
+    LuaInterpreter::StaticAnalyzer statan(ast);
+    std::cout << "Static analyzation passed" << std::endl << std::endl;
 
     // // bool int_success = Interpreter::interpret(ast);
     // // if (int_success == false) {

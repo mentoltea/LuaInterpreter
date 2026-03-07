@@ -18,7 +18,8 @@ namespace LuaInterpreter {
 class Value;
 
 // table, userdata : individual tables for each object
-// other           : common table for all objects of that type
+// string : one common metatable for all strings
+// nil, boolean, number, thread, function : NO table
 class Metatable {
     std::unordered_map< std::string , std::shared_ptr<Value> > data;
 public:
