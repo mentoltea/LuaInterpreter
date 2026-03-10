@@ -84,3 +84,9 @@ io.write("\n")
 goto END
 
 ::END::
+
+local func = function (a) 
+    io.write("lambda func: ", a)
+end
+
+func()

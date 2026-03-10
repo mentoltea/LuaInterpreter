@@ -87,7 +87,7 @@ struct FuncName: public Node {
 
 struct FuncBody: public Node {
     std::vector< std::string > params;
-    bool variadic;
+    bool variadic = false;
     std::optional<std::string> variadic_param;
 
     std::shared_ptr< Block > block;
