@@ -98,9 +98,7 @@ public:
                 } break;
                 case LuaAST::Statement::Type::GEN_FOR: {
                     auto st = std::static_pointer_cast<LuaAST::Gen_forSt>(statement);
-                    for (auto &expr: st->exps) {
-                        ensure_no_gotos_in_expr(expr);
-                    }
+                    ensure_no_gotos_in_expr(st->exp);
                     for (auto& child: st->block->statements) {
                         stack.push(child);
                     }
@@ -156,6 +154,7 @@ public:
                 case LuaAST::Expression::Type::FUNC_ANON: {
                     auto e = std::static_pointer_cast<LuaAST::FuncAnon>(expr);
                     ensure_no_gotos_in_block(e->body->block);
+                    e->captures = resolve_captures_st(e->body->block);
                 } break;
 
                 case LuaAST::Expression::Type::TABLE_CONSTR: {
@@ -163,14 +162,14 @@ public:
                     for (auto &field: e->fields) {
                         switch (field->kind) {
                             case LuaAST::Field::Kind::INDEXED : {
-                                ensure_no_gotos_in_expr(field->lhs);
-                                ensure_no_gotos_in_expr(field->rhs);
+                                stack.push(field->lhs);
+                                stack.push(field->rhs);
                             } break;
                             case LuaAST::Field::Kind::NAMED : {
-                                ensure_no_gotos_in_expr(field->rhs);
+                                stack.push(field->rhs);
                             } break;
                             case LuaAST::Field::Kind::SINGLE : {
-                                ensure_no_gotos_in_expr(field->lhs);
+                                stack.push(field->lhs);
                             } break;
                             
                             default:
@@ -184,11 +183,11 @@ public:
                     auto e = std::static_pointer_cast<LuaAST::Operation>(expr);
                     switch (e->kind) {
                         case LuaAST::Operation::Kind::UNOP: {
-                            ensure_no_gotos_in_expr(e->lhs);
+                            stack.push(e->lhs);
                         } break;
                         case LuaAST::Operation::Kind::BINOP: {
-                            ensure_no_gotos_in_expr(e->lhs);
-                            ensure_no_gotos_in_expr(e->rhs);
+                            stack.push(e->lhs);
+                            stack.push(e->rhs);
                         } break;
 
                         default: {
@@ -202,12 +201,12 @@ public:
                     
                     if (e->base->kind == LuaAST::VarPart::Kind::EXP) {
                         auto epart = std::static_pointer_cast<LuaAST::VarPartExp>(e->base);
-                        ensure_no_gotos_in_expr(epart->exp);
+                        stack.push(epart->exp);
                     }
                     for (auto &part: e->specifications) {
                         if (part->kind == LuaAST::VarPart::Kind::EXP) {
                             auto epart = std::static_pointer_cast<LuaAST::VarPartExp>(part);
-                            ensure_no_gotos_in_expr(epart->exp);
+                            stack.push(epart->exp);
                         }   
                     }
 
@@ -215,10 +214,10 @@ public:
 
                 case LuaAST::Expression::Type::FUNCCALL: {
                     auto e = std::static_pointer_cast<LuaAST::FuncCall>(expr);
-                    ensure_no_gotos_in_expr(e->function);
+                    stack.push(e->function);
                     for (auto &tail: e->tails) {
                         for (auto &arg: tail->args) {
-                            ensure_no_gotos_in_expr(arg);
+                            stack.push(arg);
                         }
                     }
                 } break;
@@ -317,6 +316,232 @@ public:
                 } break;
             }
         }
+    }
+
+
+    std::set< std::string > resolve_captures_st(std::shared_ptr< LuaAST::Block > body) {
+        std::set< std::string > names;
+
+        std::stack< std::shared_ptr<LuaAST::Statement> > stack;
+        for (auto& st: body->statements) {
+            stack.push(st);
+        }
+
+        while (!stack.empty()) {
+            std::shared_ptr statement = stack.top(); stack.pop();
+
+            switch (statement->type()) {
+                case LuaAST::Statement::Type::DO_BLOCK: {
+                    auto st = std::static_pointer_cast<LuaAST::DoBlockSt>(statement);
+                    for (auto& child: st->block->statements) {
+                        stack.push(child);
+                    }
+                } break;
+
+                case LuaAST::Statement::Type::ASSIGN: {
+                    auto st = std::static_pointer_cast<LuaAST::AssignSt>(statement);
+                    for (auto &expr: st->lhs) {
+                        auto res = resolve_captures(expr);
+                        names.insert(res.begin(), res.end());
+                    }
+                    for (auto &expr: st->rhs) {
+                        auto res = resolve_captures(expr);
+                        names.insert(res.begin(), res.end());
+                    }
+                } break;
+                case LuaAST::Statement::Type::DECLARE: {
+                    auto st = std::static_pointer_cast<LuaAST::DeclareSt>(statement);
+                    for (auto &expr: st->rhs) {
+                        auto res = resolve_captures(expr);
+                        names.insert(res.begin(), res.end());
+                    }
+                } break;
+                case LuaAST::Statement::Type::ATTRIB: {
+                } break;
+                case LuaAST::Statement::Type::FUNCDEF: {
+                    auto st = std::static_pointer_cast<LuaAST::FuncdefSt>(statement);
+                    for (auto& child: st->body->block->statements) {
+                        stack.push(child);
+                    }
+                } break;
+                case LuaAST::Statement::Type::WHILE: {
+                    auto st = std::static_pointer_cast<LuaAST::WhileSt>(statement);
+                    for (auto& child: st->block->statements) {
+                        stack.push(child);
+                    }
+                    auto res = resolve_captures(st->cond);
+                    names.insert(res.begin(), res.end());
+                } break;
+                case LuaAST::Statement::Type::REPEAT: {
+                    auto st = std::static_pointer_cast<LuaAST::RepeatSt>(statement);
+                    for (auto& child: st->block->statements) {
+                        stack.push(child);
+                    }
+                    auto res = resolve_captures(st->un_cond);
+                    names.insert(res.begin(), res.end());
+                } break;
+                case LuaAST::Statement::Type::IF: {
+                    auto st = std::static_pointer_cast<LuaAST::IfSt>(statement);
+
+                    auto res = resolve_captures(st->branch_if.first);
+                    names.insert(res.begin(), res.end());
+                    for (auto& child: st->branch_if.second->statements) {
+                        stack.push(child);
+                    }
+                    for (auto& branch: st->branch_elseif) {
+                        auto res = resolve_captures(branch.first);
+                        names.insert(res.begin(), res.end());
+                        for (auto& child: branch.second->statements) {
+                            stack.push(child);
+                        }
+                    }
+                    if (st->branch_else.has_value()) {
+                        for (auto& child: st->branch_else.value()->statements) {
+                            stack.push(child);
+                        }
+                    }
+                } break;
+                case LuaAST::Statement::Type::NUM_FOR: {
+                    auto st = std::static_pointer_cast<LuaAST::Num_forSt>(statement);
+                    for (auto& child: st->block->statements) {
+                        stack.push(child);
+                    }
+                    auto res = resolve_captures(st->from);
+                    names.insert(res.begin(), res.end());
+
+                    res = resolve_captures(st->to);
+                    names.insert(res.begin(), res.end());
+                    
+                    if (st->step.has_value()) {
+                        res = resolve_captures(st->step.value());
+                        names.insert(res.begin(), res.end());
+                    }
+                } break;
+                case LuaAST::Statement::Type::GEN_FOR: {
+                    auto st = std::static_pointer_cast<LuaAST::Gen_forSt>(statement);
+                    auto res = resolve_captures(st->exp);
+                    names.insert(res.begin(), res.end());
+                    for (auto& child: st->block->statements) {
+                        stack.push(child);
+                    }
+                } break;
+                case LuaAST::Statement::Type::GOTO: {
+                } break;
+                case LuaAST::Statement::Type::LABEL: {
+                } break;
+                case LuaAST::Statement::Type::BREAK: {
+                } break;
+                case LuaAST::Statement::Type::FUNCCALL: {
+                    auto st = std::static_pointer_cast<LuaAST::FunccallSt>(statement);
+                    auto res = resolve_captures(st->funccall);
+                    names.insert(res.begin(), res.end());
+                } break;
+                case LuaAST::Statement::Type::RETURN: {
+                    auto st = std::static_pointer_cast<LuaAST::ReturnSt>(statement);
+                    for (auto &expr: st->values) {
+                        auto res = resolve_captures(expr);
+                        names.insert(res.begin(), res.end());
+                    }
+                } break;
+
+                default:
+                case LuaAST::Statement::Type::NONE: {
+                    throw std::runtime_error("Unexpected statement type: " + std::to_string((int)statement->type()));
+                } break;
+            }
+        }
+        return names;
+    }
+
+    std::set< std::string > resolve_captures(std::shared_ptr< LuaAST::Expression > expression) {
+        std::set< std::string > names;
+        std::stack< std::shared_ptr<LuaAST::Expression> > stack;
+        stack.push(expression);
+
+        while (!stack.empty()) {
+            auto expr = stack.top(); stack.pop();
+            switch (expr->type()) {
+                case LuaAST::Expression::Type::LITERAL: {} break;
+
+                case LuaAST::Expression::Type::FUNC_ANON: {
+                    auto e = std::static_pointer_cast<LuaAST::FuncAnon>(expr);
+                    resolve_captures_st(e->body->block);
+                } break;
+
+                case LuaAST::Expression::Type::TABLE_CONSTR: {
+                    auto e = std::static_pointer_cast<LuaAST::TableConstr>(expr);
+                    for (auto &field: e->fields) {
+                        switch (field->kind) {
+                            case LuaAST::Field::Kind::INDEXED : {
+                                stack.push(field->lhs);
+                                stack.push(field->rhs);
+                            } break;
+                            case LuaAST::Field::Kind::NAMED : {
+                                stack.push(field->rhs);
+                            } break;
+                            case LuaAST::Field::Kind::SINGLE : {
+                                stack.push(field->lhs);
+                            } break;
+                            
+                            default:
+                                assert("UNREACHABLE" && 0);
+                                break;
+                        }
+                    }
+                } break;
+
+                case LuaAST::Expression::Type::OPERATION: {
+                    auto e = std::static_pointer_cast<LuaAST::Operation>(expr);
+                    switch (e->kind) {
+                        case LuaAST::Operation::Kind::UNOP: {
+                            stack.push(e->lhs);
+                        } break;
+                        case LuaAST::Operation::Kind::BINOP: {
+                            stack.push(e->lhs);
+                            stack.push(e->rhs);
+                        } break;
+
+                        default: {
+                            assert("UNREACHABLE" && 0);
+                        } break;
+                    }
+                } break;
+
+                case LuaAST::Expression::Type::VAR: {
+                    auto e = std::static_pointer_cast<LuaAST::Var>(expr);
+                    
+                    if (e->base->kind == LuaAST::VarPart::Kind::EXP) {
+                        auto epart = std::static_pointer_cast<LuaAST::VarPartExp>(e->base);
+                        stack.push(epart->exp);
+                    } else {
+                        auto npart = std::static_pointer_cast<LuaAST::VarPartName>(e->base);
+                        names.insert(npart->name);
+                    }
+                    for (auto &part: e->specifications) {
+                        if (part->kind == LuaAST::VarPart::Kind::EXP) {
+                            auto epart = std::static_pointer_cast<LuaAST::VarPartExp>(part);
+                            stack.push(epart->exp);
+                        }   
+                    }
+
+                } break;
+
+                case LuaAST::Expression::Type::FUNCCALL: {
+                    auto e = std::static_pointer_cast<LuaAST::FuncCall>(expr);
+                    stack.push(e->function);
+                    for (auto &tail: e->tails) {
+                        for (auto &arg: tail->args) {
+                            stack.push(arg);
+                        }
+                    }
+                } break;
+
+                default: {
+                    assert("UNREACHABLE" && 0);
+                } break;
+            }
+        }
+        return names;
     }
 };
 

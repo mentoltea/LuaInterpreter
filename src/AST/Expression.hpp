@@ -2,6 +2,7 @@
 #define AST_EXPRESSION_H
 
 #include "Base.hpp"
+#include <set>
 
 namespace LuaAST {
     
@@ -109,6 +110,8 @@ struct FuncBody: public Node {
 struct FuncAnon: public Expression {
     std::shared_ptr< FuncBody > body;
 
+    std::set< std::string > captures;
+
     Type type() const { return Type::FUNC_ANON; }
 
     virtual void print(std::ostream &os, int tabs = 0) const {
@@ -142,7 +145,7 @@ struct Field: public Node {
             rhs->print(os, tabs);
         } break;
         case Kind::SINGLE: {
-            lhs->print(os, tabs);
+            rhs->print(os, tabs);
         } break;
         
         default:
@@ -196,8 +199,6 @@ struct Operation: public Expression {
 
 struct VarPart: public Node {
     enum class Kind {
-        NONE,
-
         NAME,
         EXP
     } kind;

@@ -1,0 +1,1663 @@
+#ifndef COMPILER_COMPILER_H
+#define COMPILER_COMPILER_H
+
+#include "AST.hpp"
+#include "Instruction.hpp"
+
+#include <sstream>
+#include <stack>
+#include <queue>
+#include <iostream>
+
+// #include "Base.hpp"
+// #include "Value.hpp"
+// #include "Static.hpp"
+
+// NONE,
+
+
+// FUNCDEF,
+// f(a1, .. an, ...vargs)
+// compile block
+
+
+
+
+
+
+// GOTO,        
+// LABEL,        
+
+// BREAK,
+/*
+    GOTO __while_end
+
+    GOTO __for_end
+    
+    GOTO __genfor_end
+*/
+
+
+
+
+
+
+// Expressions
+
+// NONE,
+/*
+    PUT_NIL
+*/
+
+// LITERAL,
+/*
+    PUT_STR literal
+*/
+
+// FUNC_ANON,
+// compile function, get it's lambda name
+/*
+    STORE __labmda
+*/
+
+
+//--------------------
+// OPERATION,
+/*
+    [Eval lhs]
+    [Eval rhs]
+    [Operation]
+*/
+
+// LE <=
+// LT <
+// GE >=
+// GT >
+// EQ ==
+// NEQ ~=
+
+// CONCAT ..
+
+// ADD
+// SUB
+// MUL
+// DIV  //
+// TRUEDIV /
+// MOD %
+// SHLEFT <<
+// SHRIGHT >>
+
+// AND
+// OR
+
+// BITAND
+// BITOR
+// BITXOR
+
+// POW
+
+// HASH #
+// NEGATE -
+// NOT 
+//------------------
+
+// VAR,
+// base[e1][e2]...[en]
+/*
+    LOAD base
+    [Eval e1]
+    DYN_INDEX
+    [Eval e2]
+    DYN_INDEX
+    ...
+    [Eval en]
+    DYN_INDEX en
+*/
+
+// FUNCCALL,
+// (func)(a1, a2, ..., an, ...vargs)
+/*
+    [Eval a1]
+    ...
+    [Eval an]
+    [Eval func]
+    METAINDEX __call
+    CALL n
+*/
+
+
+
+class Compiler {
+    static size_t uid;
+    static size_t get_uid() { return uid++; }
+    static std::string get_ustr() { return "__uid_" + std::to_string(get_uid()) + "_"; }
+
+    std::stack< std::string > break_labels;
+    std::stack< size_t > scopes_put;
+
+    std::vector< std::string > prefixes;
+    std::string get_prefix() { 
+        std::stringstream ss;
+        ss << "";
+        for (auto &str: prefixes) {
+            ss << str << "_";
+        }
+        return ss.str();
+    }
+
+    std::queue< std::pair<std::string, LuaAST::FuncBody*> > functions_to_compile;
+public:
+    std::vector< Instruction > compile(std::shared_ptr<LuaAST::Block> block) {
+        LuaAST::FuncBody entry;
+        entry.block = block;
+        functions_to_compile.push( {"_start", &entry} );
+
+        std::vector<Instruction> result;
+
+        while (!functions_to_compile.empty()) {
+            auto func = functions_to_compile.front();
+            functions_to_compile.pop();
+
+            auto compiled = compile_function(func.first, func.second);
+            result.insert(result.end(), compiled.begin(), compiled.end());
+            
+            // на случай, если нет return
+            result.push_back( Instruction {.type = Instruction::Type::PUT_NIL} );
+            result.push_back( Instruction {.type = Instruction::Type::RET, .N = 1} );
+        }
+
+        return result;
+    }
+
+    std::vector< Instruction > compile_function(const std::string& funcname, LuaAST::FuncBody *body) {
+        std::cout << "compile_function" << funcname << std::endl;
+        body->print(std::cout);
+        std::cout << std::endl;
+
+        // считаем, что CALL в runtime всё подготовит сам:
+        // создаст новый стек
+        // переложит все аргументы на стек
+        // если мало => заполнит до N с nil
+        // если много => переложит в varg
+
+        std::vector< Instruction > result;
+
+        break_labels = std::stack< std::string >();
+        scopes_put = std::stack< size_t > (); scopes_put.push(0);
+        prefixes.push_back(funcname);
+        
+        // std::cout << "point 1" << std::endl;
+        
+        result.push_back( 
+            Instruction { 
+                .type = Instruction::Type::LABEL,
+                .label = funcname,
+            } 
+        );
+
+        // std::cout << "point 2" << std::endl;
+        size_t N = body->params.size();
+
+        result.push_back( Instruction {.type = Instruction::Type::PUT_SCOPE} );
+        scopes_put.top()++;
+        // std::cout << "point 3" << std::endl;
+
+        if (N > 0) {
+            for (size_t i = N-1; i > 0; i--) {
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::SET_LOCAL,
+                        .name = body->params[i]
+                    } 
+                );
+            }
+        }
+        // std::cout << "point 4" << std::endl;
+
+        auto block = compile_block(body->block.get());
+        result.insert(result.end(), block.begin(), block.end());
+
+        result.push_back( Instruction {.type = Instruction::Type::POP_SCOPE} );
+        scopes_put.top()--;
+
+        prefixes.pop_back();
+        return result;
+    }
+
+    std::vector< Instruction > compile_block(LuaAST::Block *block) {
+        std::cout << "compile_block" << std::endl;
+        block->print(std::cout);
+        std::cout << std::endl;
+
+        std::vector< Instruction > result;
+        for (auto st: block->statements) {
+            auto compiled = compile_statement(st.get());
+            result.insert(result.end(), compiled.begin(), compiled.end());
+        }
+        return result;
+    }
+
+    std::vector< Instruction > compile_statement(LuaAST::Statement *statement) {
+        std::vector< Instruction > result;
+
+        std::cout << "compile_statement" << std::endl;
+        statement->print(std::cout);
+        std::cout << std::endl;
+
+        switch (statement->type()) {
+            case LuaAST::Statement::Type::DO_BLOCK: {
+                LuaAST::DoBlockSt* st = (LuaAST::DoBlockSt*) statement;
+                // DO_BLOCK,        
+                /*
+                    PUT_SCOPE
+                    [Block]
+                    POP_SCOPE
+                */
+               result.push_back( Instruction {.type = Instruction::Type::PUT_SCOPE} );
+               scopes_put.top()++;
+               
+               auto block = compile_block(st->block.get());
+               result.insert(result.end(), block.begin(), block.end());
+
+               result.push_back( Instruction {.type = Instruction::Type::POP_SCOPE} );
+               scopes_put.top()--;
+            } break;
+
+            case LuaAST::Statement::Type::ASSIGN: {
+                LuaAST::AssignSt* st = (LuaAST::AssignSt*) statement;
+                // ASSIGN,
+                // var = exp
+                /*
+
+                */
+                // var.field1.field2....fieldn = exp 
+                /*
+                    [Eval exp]
+                    LOAD var
+                    INDEX field1
+                    ...
+                    INDEX field_n-1
+                    ASSIGN_WHAT_WHOM fieldn
+                */
+                size_t left_N = st->lhs.size();
+                size_t right_N = st->rhs.size();
+
+                if (right_N > left_N) {
+                    std::cerr << "Assignment: RHS is longer than LHS" << std::endl;
+                    st->print(std::cerr);
+                    throw std::runtime_error("Compilation: Assignment");
+                }
+
+                for (size_t i=0; i<left_N; i++) {
+                    if (i < right_N) {
+                        auto exp = compile_expression(st->rhs[i].get());
+                        result.insert(result.end(), exp.begin(), exp.end());
+                    } else {
+                        result.push_back(Instruction { .type = Instruction::Type::PUT_NIL });
+                    }
+
+                    auto var = st->lhs[i].get();
+                    if (var->specifications.size() == 0) {
+                        if (var->base->kind != LuaAST::VarPart::Kind::NAME) {
+                            std::cerr << "Assignment: cannot assign to expression" << std::endl;
+                            st->print(std::cerr);
+                            throw std::runtime_error("Compilation: Assignment");
+                        }
+                        LuaAST::VarPartName* varname = (LuaAST::VarPartName*) var;
+                        result.push_back(
+                            Instruction { .type = Instruction::Type::STORE, .name = varname->name }
+                        );
+                    } else {
+                        LuaAST::Var copy = *var;
+                        copy.specifications.pop_back();
+
+                        auto exp = compile_expression(&copy);
+                        result.insert(result.end(), exp.begin(), exp.end());
+
+                        auto last = var->specifications.back().get();
+                        if (last->kind == LuaAST::VarPart::Kind::NAME) {
+                            result.push_back(
+                                Instruction { 
+                                    .type = Instruction::Type::ASSIGN_WHAT_WHOM, 
+                                    .field = ((LuaAST::VarPartName*)last)->name 
+                                }
+                            );   
+                        } else {
+                            LuaAST::VarPartExp* varexp = (LuaAST::VarPartExp*) last;
+                            exp = compile_expression(varexp->exp.get());
+                            result.insert(result.end(), exp.begin(), exp.end());
+                            result.push_back(
+                                Instruction { 
+                                    .type = Instruction::Type::ASSIGN_WHAT_WHOM_WHERE, 
+                                }
+                            );
+                        }
+                    }
+                }
+            } break;
+
+            case LuaAST::Statement::Type::DECLARE: {
+                LuaAST::DeclareSt* st = (LuaAST::DeclareSt*)statement;
+                // DECLARE,
+                // local common_attr var1 attr1, ... varn attrn = exp1, ... expm
+                /*
+                    [Eval exp1]
+                    SET_LOCAL var1
+                    SET_ATTR var1 attr1
+                    SET_ATTR var1 common_attr
+                    
+                    [Eval expm]
+                    SET_LOCAL varm
+                    SET_ATTR varm attrm
+                    SET_ATTR varm common_attr
+                    
+                    [Eval nil]
+                    SET_LOCAL varn
+                    SET_ATTR varn attrn
+                    SET_ATTR varn common_attr
+                */
+                // global common_attr var1 attr1, ... varn attrn = exp1, ... expm
+                /*
+                    [Eval exp1]
+                    SET_GLOBAL var1
+                    SET_ATTR var1 attr1
+                    SET_ATTR var1 common_attr
+                    
+                    [Eval expm]
+                    SET_GLOBAL varm
+                    SET_ATTR varm attrm
+                    SET_ATTR varm common_attr
+                    
+                    [Eval nil]
+                    SET_GLOBAL varn
+                    SET_ATTR varn attrn
+                    SET_ATTR varn common_attr
+                */
+                size_t left_N = st->lhs.size();
+                size_t right_N = st->rhs.size();
+
+                for (size_t i = 0; i < left_N; i++) {
+                    if (i < right_N) {
+                        auto exp = compile_expression(st->rhs[i].get());
+                        result.insert(result.end(), exp.begin(), exp.end());
+                    } else {
+                        result.push_back(Instruction { .type = Instruction::Type::PUT_NIL });
+                    }
+                    
+                    auto pair = st->lhs[i];
+                    if (st->scope == LuaAST::ScopeSpec::LOCAL) {
+                        result.push_back(
+                            Instruction {
+                                .type = Instruction::Type::SET_LOCAL,
+                                .name = pair.first
+                            }
+                        );
+                    } else {
+                        result.push_back(
+                            Instruction {
+                                .type = Instruction::Type::SET_GLOBAL,
+                                .name = pair.first
+                            }
+                        );
+                    }
+
+                    if (pair.second) {
+                        if (pair.second->kind == LuaAST::Attribute::Kind::CONST) {
+                            result.push_back(
+                                Instruction {
+                                    .type = Instruction::Type::SET_ATTR,
+                                    .var = pair.first,
+                                    .attr = "const",
+                                }
+                            );
+                        } else {
+                            std::cerr << "Unsupported attribute " << (int)pair.second->kind << std::endl;
+                            st->print(std::cerr);
+                            throw std::runtime_error("Compilation: Declaration");
+                        }
+                    }
+
+                    if (st->common_attr) {
+                        if (st->common_attr->kind == LuaAST::Attribute::Kind::CONST) {
+                            result.push_back(
+                                Instruction {
+                                    .type = Instruction::Type::SET_ATTR,
+                                    .var = pair.first,
+                                    .attr = "const",
+                                }
+                            );
+                        } else {
+                            std::cerr << "Unsupported attribute " << (int)st->common_attr->kind << std::endl;
+                            st->print(std::cerr);
+                            throw std::runtime_error("Compilation: Declaration");
+                        }
+                    }
+                }
+            } break;
+
+            case LuaAST::Statement::Type::ATTRIB: {
+                LuaAST::AttribSt* st = (LuaAST::AttribSt*) statement;
+                // ATTRIB,
+                /*
+                    GLOBATR attribute
+                */
+                if (st->attr->kind == LuaAST::Attribute::Kind::CONST) {
+                    result.push_back(
+                        Instruction {
+                            .type = Instruction::Type::GLOBATTR,
+                            .attr = "const",
+                        }
+                    );
+                }
+            } break;
+
+            case LuaAST::Statement::Type::FUNCDEF: {
+                LuaAST::FuncdefSt* st = (LuaAST::FuncdefSt*)statement;
+                if (st->kind == LuaAST::FuncdefSt::Kind::DEFAULT) {
+                    LuaAST::DefaultFuncdefSt* def = (LuaAST::DefaultFuncdefSt*)st;
+                    auto name = def->name.get();
+                    
+                    std::string funcname = get_prefix() + get_ustr() + name->base;
+                    for (auto& spec: name->specifications) {
+                        funcname += "." + spec;
+                    }
+                    funcname += ":" + name->kind;
+                    functions_to_compile.push( { funcname, st->body.get() } );
+
+                    result.push_back(
+                        Instruction {
+                            .type = Instruction::Type::PUT_FUNC,
+                            .name = st->body->variadic_param.value_or("varg"),
+                            .label = funcname,
+                            .N = st->body->params.size(),
+                        }
+                    );
+
+                    // f
+                    if (name->specifications.empty() && name->kind.empty()) {
+                        result.push_back(
+                            Instruction {
+                                .type = Instruction::Type::STORE,
+                                .name = name->base,
+                            }
+                        );
+                        break;
+                    }
+
+                    // f.x
+                    if (!name->specifications.empty() && name->kind.empty()) {
+                        size_t N = name->specifications.size();
+                        
+                        result.push_back(
+                            Instruction {
+                                .type = Instruction::Type::LOAD,
+                                .name = name->base,
+                            }
+                        );
+                        for (size_t i=0; i<N-1; i++) {
+                            result.push_back(
+                                Instruction {
+                                    .type = Instruction::Type::INDEX,
+                                    .name = name->specifications[i],
+                                }
+                            );
+                        }
+                        result.push_back(
+                            Instruction {
+                                .type = Instruction::Type::ASSIGN_WHAT_WHOM,
+                                .field = name->specifications[N-1],
+                            }
+                        );
+                        break;
+                    }
+
+                    // f:met
+                    if (name->specifications.empty() && !name->kind.empty()) {
+                        result.push_back(
+                            Instruction {
+                                .type = Instruction::Type::LOAD,
+                                .name = name->base,
+                            }
+                        );
+
+                        result.push_back(
+                            Instruction {
+                                .type = Instruction::Type::METAASSIGN_WHAT_WHOM,
+                                .metafield = name->kind,
+                            }
+                        );
+                        break;
+                    }
+
+                    // f.x:met
+                    if (!name->specifications.empty() && !name->kind.empty()) {
+                        size_t N = name->specifications.size();
+                        
+                        result.push_back(
+                            Instruction {
+                                .type = Instruction::Type::LOAD,
+                                .name = name->base,
+                            }
+                        );
+                        for (size_t i=0; i<N; i++) {
+                            result.push_back(
+                                Instruction {
+                                    .type = Instruction::Type::INDEX,
+                                    .name = name->specifications[i],
+                                }
+                            );
+                        }
+
+                        result.push_back(
+                            Instruction {
+                                .type = Instruction::Type::METAASSIGN_WHAT_WHOM,
+                                .metafield = name->kind,
+                            }
+                        );
+                        break;
+                    }
+                } else {
+                    LuaAST::ScopedFuncdefSt* sc = (LuaAST::ScopedFuncdefSt*)st;
+                    std::string funcname = get_prefix() + get_ustr() + sc->name;
+                    functions_to_compile.push( { funcname, st->body.get() } );
+
+                    result.push_back(
+                        Instruction {
+                            .type = Instruction::Type::PUT_FUNC,
+                            .name = st->body->variadic_param.value_or("varg"),
+                            .label = funcname,
+                            .N = st->body->params.size(),
+                        }
+                    );
+
+                    if (sc->scope == LuaAST::ScopeSpec::LOCAL) {
+                        result.push_back(
+                            Instruction {
+                                .type = Instruction::Type::SET_LOCAL,
+                                .name = sc->name,
+                            }
+                        );
+                    } else {
+                        result.push_back(
+                            Instruction {
+                                .type = Instruction::Type::SET_GLOBAL,
+                                .name = sc->name,
+                            }
+                        );
+                    }
+                }
+            } break;
+
+            case LuaAST::Statement::Type::WHILE: {
+                LuaAST::WhileSt* st = (LuaAST::WhileSt*) statement;
+                // WHILE,        
+                /*
+                __while_start
+                    [Eval condition]
+                    NOT
+                    BRANCH __while_end
+                    
+                    PUT_SCOPE
+                    [Block]
+                    POP_SCOPE
+                    GOTO __while_start
+                __while_end
+
+                */
+                std::string prefix = get_prefix();
+                std::string ustr = get_ustr();
+                std::string while_start = prefix + ustr + "__while_start"; 
+                std::string while_end = prefix + ustr + "__while_end";
+                break_labels.push(while_end);
+                scopes_put.push(0);
+
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::LABEL,
+                        .label = while_start,
+                    } 
+                );
+                auto cond = compile_expression(st->cond.get());
+                result.insert(result.end(), cond.begin(), cond.end());
+                result.push_back( Instruction { .type = Instruction::Type::NOT } );
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::BRANCH,
+                        .label = while_end,
+                    } 
+                );
+
+                result.push_back( Instruction { .type = Instruction::Type::PUT_SCOPE } );
+                scopes_put.top()++;
+
+                auto block = compile_block(st->block.get());
+                result.insert(result.end(), block.begin(), block.end());
+                
+                result.push_back( Instruction { .type = Instruction::Type::POP_SCOPE } );
+                scopes_put.top()--;
+
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::GOTO,
+                        .label = while_start,
+                    } 
+                );
+
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::LABEL,
+                        .label = while_end,
+                    } 
+                );
+
+                break_labels.pop();
+                scopes_put.pop();
+            } break;
+
+            case LuaAST::Statement::Type::REPEAT: {
+                LuaAST::RepeatSt* st = (LuaAST::RepeatSt*) statement;
+                // REPEAT,
+                /* 
+                __repeat_start
+                    [Eval condition]
+                    BRANCH __repeat_end
+                    
+                    PUT_SCOPE
+                    [Block]
+                    POP_SCOPE
+                    GOTO __repeat_start
+                __repeat_end
+                */
+
+                std::string prefix = get_prefix();
+                std::string ustr = get_ustr();
+                std::string repeat_start = prefix + ustr + "__repeat_start"; 
+                std::string repeat_end = prefix + ustr + "__repeat_end";
+                break_labels.push(repeat_end);
+                scopes_put.push(0);
+
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::LABEL,
+                        .label = repeat_start,
+                    } 
+                );
+                auto cond = compile_expression(st->un_cond.get());
+                result.insert(result.end(), cond.begin(), cond.end());
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::BRANCH,
+                        .label = repeat_end,
+                    } 
+                );
+
+                result.push_back( Instruction { .type = Instruction::Type::PUT_SCOPE } );
+                scopes_put.top()++;
+
+                auto block = compile_block(st->block.get());
+                result.insert(result.end(), block.begin(), block.end());
+                
+                result.push_back( Instruction { .type = Instruction::Type::POP_SCOPE } );
+                scopes_put.top()--;
+
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::GOTO,
+                        .label = repeat_start,
+                    } 
+                );
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::LABEL,
+                        .label = repeat_end,
+                    } 
+                );
+
+                break_labels.pop();
+                scopes_put.pop();
+            } break;
+
+            case LuaAST::Statement::Type::IF: {
+                LuaAST::IfSt* st = (LuaAST::IfSt*) statement;
+                // IF,
+                // if E1 then B1 elseif Ei then Bi else Bn
+                /*
+                    [Eval E1]
+                    NOT
+                    BRANCH __skip_0
+                    PUT_SCOPE
+                    [BLOCK B1]
+                    POP_SCOPE
+                    GOTO __skip_all
+                __skip_0
+
+                    [Eval Ei]
+                    NOT
+                    BRANCH __skip_i
+                    PUT_SCOPE
+                    [BLOCK Bi]
+                    POP_SCOPE
+                    GOTO __skip_all
+                __skip_i
+
+                    PUT_SCOPE
+                    [BLOCK Bn]
+                    POP_SCOPE
+
+                __skip_all
+                */
+
+                std::string prefix = get_prefix();
+                std::string ustr = get_ustr();
+                std::string skip = prefix + ustr + "__if_skip_";
+
+                // if
+                auto exp = compile_expression( st->branch_if.first.get() );
+                result.insert(result.end(), exp.begin(), exp.end());
+                result.push_back( Instruction { .type = Instruction::Type::NOT } );
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::BRANCH,
+                        .label = skip + std::to_string(0),
+                    } 
+                );
+                result.push_back( Instruction { .type = Instruction::Type::PUT_SCOPE } );
+                scopes_put.top()++;
+
+                auto block = compile_block( st->branch_if.second.get() );
+                result.insert(result.end(), block.begin(), block.end());
+                
+                result.push_back( Instruction { .type = Instruction::Type::POP_SCOPE } );
+                scopes_put.top()--;
+
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::GOTO,
+                        .label = skip + "all",
+                    } 
+                );
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::LABEL,
+                        .label = skip + std::to_string(0),
+                    } 
+                );
+
+                for (size_t i=0; i < st->branch_elseif.size(); i++) {
+                    auto& branch = st->branch_elseif[i];
+
+                    exp = compile_expression( branch.first.get() );
+                    result.insert(result.end(), exp.begin(), exp.end());
+                    result.push_back( Instruction { .type = Instruction::Type::NOT } );
+                    result.push_back( 
+                        Instruction { 
+                            .type = Instruction::Type::BRANCH,
+                            .label = skip + std::to_string(i + 1),
+                        } 
+                    );
+                    result.push_back( Instruction { .type = Instruction::Type::PUT_SCOPE } );
+                    scopes_put.top()++;
+
+                    block = compile_block( branch.second.get() );
+                    result.insert(result.end(), block.begin(), block.end());
+                    
+                    result.push_back( Instruction { .type = Instruction::Type::POP_SCOPE } );
+                    scopes_put.top()--;
+
+                    result.push_back( 
+                        Instruction { 
+                            .type = Instruction::Type::GOTO,
+                            .label = skip + "all",
+                        } 
+                    );
+                    result.push_back( 
+                        Instruction { 
+                            .type = Instruction::Type::LABEL,
+                            .label = skip + std::to_string(i + 1),
+                        } 
+                    );
+                }
+
+                if (st->branch_else.has_value()) {
+                    auto brelse = st->branch_else.value();
+
+                    result.push_back( Instruction { .type = Instruction::Type::PUT_SCOPE } );
+                    scopes_put.top()++;
+
+                    block = compile_block( brelse.get() );
+                    result.insert(result.end(), block.begin(), block.end());
+                    
+                    result.push_back( Instruction { .type = Instruction::Type::POP_SCOPE } );
+                    scopes_put.top()--;
+                }
+
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::LABEL,
+                        .label = skip + "all",
+                    } 
+                );
+            } break;
+
+            case LuaAST::Statement::Type::NUM_FOR: {
+                LuaAST::Num_forSt* st = (LuaAST::Num_forSt*) statement; 
+                // NUM_FOR,
+                // for Var = Estart, Eend, Estep do BLOCK end
+                /*
+                    [Eval Estart]
+                    SET_LOCAL __v
+                    
+                    [Eval Eend]
+                    SET_LOCAL __v_end
+                    
+                    [Eval Estep]
+                    SET_LOCAL __v_step
+
+                __for_condition
+                    LOAD __v
+                    LOAD __v_stop
+                    [Eval __v > __v_stop]
+                    BRANCH __for_end
+                    
+                    PUT_SCOPE
+                    LOAD __v
+                    SET_LOCAL Var 
+                    [Block BLOCK]
+                    POP_SCOPE
+
+                    LOAD __v
+                    LOAD __v_step
+                    [Eval __v + __v_step]
+                    STORE __v
+                    GOTO __for_condition
+                __for_end
+                */
+
+                std::string prefix = get_prefix();
+                std::string ustr = get_ustr();
+
+                std::string var = prefix + ustr + "__numfor" + "__var";
+                std::string var_end = prefix + ustr + "__numfor" + "__var" + "__end";
+                std::string var_step = prefix + ustr + "__numfor" + "__var" + "__step";
+
+                std::string cond_label = prefix + ustr + "__numfor_cond";
+                std::string end_label = prefix + ustr + "__numfor_end";
+                break_labels.push(end_label);
+                scopes_put.push(0);
+
+                auto exp = compile_expression(st->from.get());
+                result.insert(result.end(), exp.begin(), exp.end());
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::SET_LOCAL,
+                        .name = var
+                    } 
+                );
+
+                exp = compile_expression(st->to.get());
+                result.insert(result.end(), exp.begin(), exp.end());
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::SET_LOCAL,
+                        .name = var_end
+                    } 
+                );
+
+                if (st->step.has_value()) {
+                    exp = compile_expression(st->step.value().get());
+                    result.insert(result.end(), exp.begin(), exp.end());
+                } else {
+                    result.push_back( 
+                        Instruction { 
+                            .type = Instruction::Type::PUT_NUM,
+                            .num = (int64_t) 1,
+                        } 
+                    );
+                }
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::SET_LOCAL,
+                        .name = var_step
+                    } 
+                );
+
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::LABEL,
+                        .label = cond_label
+                    } 
+                );
+
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::LOAD,
+                        .name = var
+                    } 
+                );
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::LOAD,
+                        .name = var_end
+                    } 
+                );
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::GT
+                    } 
+                );
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::BRANCH,
+                        .label = end_label,
+                    } 
+                );
+
+
+                result.push_back( Instruction { .type = Instruction::Type::PUT_SCOPE } );
+                scopes_put.top()++;
+
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::LOAD,
+                        .name = var
+                    } 
+                );
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::SET_LOCAL,
+                        .name = st->var
+                    } 
+                );
+
+                auto block = compile_block(st->block.get());
+                result.insert(result.end(), block.begin(), block.end());
+
+                result.push_back( Instruction { .type = Instruction::Type::POP_SCOPE } );
+                scopes_put.top()--;
+
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::LOAD,
+                        .name = var
+                    } 
+                );
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::LOAD,
+                        .name = var_step
+                    } 
+                );
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::ADD,
+                    } 
+                );
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::STORE,
+                        .name = var
+                    } 
+                );
+
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::GOTO,
+                        .label = cond_label,
+                    } 
+                );
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::LABEL,
+                        .label = end_label,
+                    } 
+                );
+
+                break_labels.pop();
+                scopes_put.pop();
+            } break;
+
+            case LuaAST::Statement::Type::GEN_FOR: {
+                LuaAST::Gen_forSt* st = (LuaAST::Gen_forSt*) statement;
+                // GEN_FOR,
+                // for var1, ...varn in exp do ...
+                /*
+                    PUT_SCOPE
+                    [Eval exp]
+                    -- f, s, var = exp
+                    STORE __var
+                    STORE __s
+                    STORE __f
+
+                __genfor_cond
+                    PUT_SCOPE
+                    [Eval f(s, var)]
+                    STORE varn
+                    ...
+                    STORE var1
+
+                    LOAD var1
+                    NOT
+                    BRANCH __genfor_end
+                    
+                    LOAD var1
+                    STORE var
+                    [Block]
+                    POP_SCOPE
+                    GOTO __genfor_cond
+                __genfor_end
+                    POP_SCOPE
+                */
+
+                std::string prefix = get_prefix();
+                std::string ustr = get_ustr();
+
+                std::string cond_label = prefix + ustr + "__genfor" + "_cond";
+                std::string end_label = prefix + ustr + "__genfor" + "_end";
+
+                std::string var_var = prefix + ustr + "__genfor" + "__var";
+                std::string s_var = prefix + ustr + "__genfor" + "__s";
+                std::string f_var = prefix + ustr + "__genfor" + "__f";
+                
+                result.push_back( Instruction { .type = Instruction::Type::PUT_SCOPE } );
+                scopes_put.top()++;
+                
+                auto exp = compile_expression(st->exp.get());
+                result.insert(result.end(), exp.begin(), exp.end());
+
+                break_labels.push(end_label);
+                scopes_put.push(0);
+
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::SET_LOCAL,
+                        .name = var_var
+                    } 
+                );
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::SET_LOCAL,
+                        .name = s_var
+                    } 
+                );
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::SET_LOCAL,
+                        .name = f_var
+                    } 
+                );
+
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::LABEL,
+                        .name = cond_label
+                    } 
+                );
+
+                result.push_back( Instruction { .type = Instruction::Type::PUT_SCOPE } );
+                scopes_put.top()++;
+                
+                // f(s, var)
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::LOAD,
+                        .name = s_var
+                    } 
+                );
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::LOAD,
+                        .name = var_var
+                    } 
+                );
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::LOAD,
+                        .name = f_var
+                    } 
+                );
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::CALL,
+                        .N = 2,
+                        .M = st->vars.size(),
+                    } 
+                );
+
+                for (auto &var: st->vars) {
+                    result.push_back( 
+                        Instruction { 
+                            .type = Instruction::Type::SET_LOCAL,
+                            .name = var
+                        } 
+                    );
+                }
+
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::LOAD,
+                        .name = st->vars[0]
+                    } 
+                );
+
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::NOT,
+                    } 
+                );
+
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::BRANCH,
+                        .label = end_label
+                    } 
+                );
+
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::LOAD,
+                        .name = st->vars[0]
+                    } 
+                );
+
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::STORE,
+                        .name = var_var
+                    } 
+                );
+
+                auto block = compile_block(st->block.get());
+                result.insert(result.end(), block.begin(), block.end());
+
+                result.push_back( Instruction { .type = Instruction::Type::POP_SCOPE } );
+                scopes_put.top()--;
+
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::GOTO,
+                        .label = cond_label
+                    } 
+                );
+
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::LABEL,
+                        .label = end_label
+                    } 
+                );
+                
+                break_labels.pop();
+                scopes_put.pop();
+
+                result.push_back( Instruction { .type = Instruction::Type::POP_SCOPE } );
+                scopes_put.top()--;
+            } break;
+
+            case LuaAST::Statement::Type::GOTO: {
+                throw std::runtime_error("Gotos are not supported yet");
+            } break;
+
+            case LuaAST::Statement::Type::LABEL: {
+                throw std::runtime_error("Labels are not supported yet");
+            } break;
+            
+            case LuaAST::Statement::Type::BREAK: {
+                auto label = break_labels.top();
+                size_t N = scopes_put.top();
+                for (size_t i=0; i<N; i++) {
+                    result.push_back( Instruction { .type = Instruction::Type::POP_SCOPE } );
+                }
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::GOTO,
+                        .label = label, 
+                    } 
+                );
+            } break;
+
+            case LuaAST::Statement::Type::FUNCCALL: {
+                LuaAST::FunccallSt* st = (LuaAST::FunccallSt*) statement;
+                auto exp = compile_expression(st->funccall.get());
+                result.insert(result.end(), exp.begin(), exp.end());
+            } break;
+
+            case LuaAST::Statement::Type::RETURN: {
+                // RETURN e1, e2, en
+                /*
+                    [Eval e1]
+                    [Eval e2]
+                    ...
+                    [Eval en]
+                    RET N
+                */ 
+                LuaAST::ReturnSt* st = (LuaAST::ReturnSt*) statement;
+
+                size_t N = st->values.size();
+                for (size_t i=0; i<N; i++) {
+                    auto exp = compile_expression(st->values[i].get());
+                    result.insert(result.end(), exp.begin(), exp.end());
+                }
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::RET,
+                        .N = N
+                    } 
+                );
+            } break;
+
+            default:
+            case LuaAST::Statement::Type::NONE: {
+            } break;
+        }
+
+
+        // clear stack after statement
+        result.push_back( 
+            Instruction { 
+                .type = Instruction::Type::CLEAR_STACK,
+            } 
+        );
+
+        return result;
+    }
+
+    std::vector< Instruction > compile_expression(LuaAST::Expression *expression) {
+        std::vector< Instruction > result;
+
+        switch (expression->type()) {
+            case LuaAST::Expression::Type::LITERAL: {
+                LuaAST::Literal* exp = (LuaAST::Literal*) expression;
+                switch (exp->kind) {
+                    case LuaAST::Literal::Kind::NIL: {
+                        result.push_back( 
+                            Instruction { 
+                                .type = Instruction::Type::PUT_NIL,
+                            } 
+                        );
+                    } break;
+
+                    case LuaAST::Literal::Kind::BOOLEAN: {
+                        if (std::get<bool>(exp->value)) {
+                            result.push_back( 
+                                Instruction { 
+                                    .type = Instruction::Type::PUT_TRUE,
+                                } 
+                            );
+                        } else {
+                            result.push_back( 
+                                Instruction { 
+                                    .type = Instruction::Type::PUT_FALSE,
+                                } 
+                            );
+                        }
+                    } break;
+
+                    case LuaAST::Literal::Kind::NUMBER: {
+                        auto& num = std::get<LuaAST::Number>(exp->value);
+                        if (num.kind == LuaAST::Number::Kind::INT) {
+                            result.push_back( 
+                                Instruction { 
+                                    .type = Instruction::Type::PUT_NUM,
+                                    .num = (int64_t) num.i
+                                } 
+                            );
+                        } else {
+                            result.push_back( 
+                                Instruction { 
+                                    .type = Instruction::Type::PUT_NUM,
+                                    .num = (std::float64_t) num.f
+                                } 
+                            );
+                        }
+                    } break;
+                    
+                    case LuaAST::Literal::Kind::STRING: {
+                        result.push_back( 
+                            Instruction { 
+                                .type = Instruction::Type::PUT_STR,
+                                .str = std::get<std::string>(exp->value)
+                            } 
+                        );
+                    } break;
+                    
+                    default: {
+                        throw std::runtime_error("Unknown literal type: " + std::to_string((int)exp->kind));
+                    } break;
+                }
+            } break;
+
+            case LuaAST::Expression::Type::FUNC_ANON: {
+                LuaAST::FuncAnon* exp = (LuaAST::FuncAnon*) expression;
+
+                std::string funcname = get_prefix() + get_ustr() + "__lambda";
+                functions_to_compile.push( { funcname, exp->body.get() } );
+
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::PUT_FUNC,
+                        .name = exp->body->variadic_param.value_or("varg"),
+                        .label = funcname,
+                        .N = exp->body->params.size(),
+                    } 
+                );
+            } break;
+
+            case LuaAST::Expression::Type::TABLE_CONSTR: {
+                LuaAST::TableConstr* exp = (LuaAST::TableConstr*) expression;
+                // TABLE_CONSTR,
+                // { ... }
+                /*
+                    PUT_TABLE 
+                    [Fields]
+                */
+
+                result.push_back( 
+                    Instruction { 
+                        .type = Instruction::Type::PUT_TABLE,
+                    } 
+                );
+
+                // [key] = value
+                /*
+                    DUP
+                    [Eval key]
+                    [Eval value]    
+                    ASSIGN_WHOM_WHERE_WHAT
+                */
+
+                // name = value
+                /*
+                    DUP
+                    [Eval value]
+                    ASSIGN_WHOM_WHAT name
+                */
+
+                // value
+                /*
+                    DUP
+                    PUT_NUM [Index]
+                    [Eval value]
+                    ASSIGN_WHOM_WHERE_WHAT
+                */
+                size_t N = 0;
+                for (auto field: exp->fields) {
+                    result.push_back( 
+                        Instruction { 
+                            .type = Instruction::Type::DUP,
+                        } 
+                    );
+
+                    switch (field->kind) {
+                        case LuaAST::Field::Kind::INDEXED: {
+                            auto sub = compile_expression(field->lhs.get());
+                            result.insert(result.end(), sub.begin(), sub.end());
+
+                            sub = compile_expression(field->rhs.get());
+                            result.insert(result.end(), sub.begin(), sub.end());
+
+                            result.push_back( 
+                                Instruction { 
+                                    .type = Instruction::Type::ASSIGN_WHOM_WHERE_WHAT,
+                                } 
+                            );
+                        } break;
+
+                        case LuaAST::Field::Kind::NAMED: {
+                            auto sub = compile_expression(field->rhs.get());
+                            result.insert(result.end(), sub.begin(), sub.end());
+
+                            result.push_back( 
+                                Instruction { 
+                                    .type = Instruction::Type::ASSIGN_WHOM_WHAT,
+                                    .field = field->name,
+                                } 
+                            );
+                        } break;
+                        
+                        case LuaAST::Field::Kind::SINGLE: {
+                            result.push_back( 
+                                Instruction { 
+                                    .type = Instruction::Type::PUT_NUM,
+                                    .num = (int64_t) N++,
+                                } 
+                            );
+
+                            auto sub = compile_expression(field->rhs.get());
+                            result.insert(result.end(), sub.begin(), sub.end());
+
+                            result.push_back( 
+                                Instruction { 
+                                    .type = Instruction::Type::ASSIGN_WHOM_WHERE_WHAT,
+                                } 
+                            );
+                        } break;
+
+                        default: {
+                            throw std::runtime_error("Unexpected field type");
+                        } break;
+                    }
+                }
+
+            } break;
+
+            case LuaAST::Expression::Type::OPERATION: {
+                LuaAST::Operation* exp = (LuaAST::Operation*) expression;
+
+                if (exp->kind == LuaAST::Operation::Kind::UNOP) {
+                    auto sub = compile_expression(exp->lhs.get());
+                    result.insert(result.end(), sub.begin(), sub.end());
+
+                    if (exp->operat == "#") {
+                        result.push_back( Instruction { .type = Instruction::Type::HASH } );
+                    } else
+                    if (exp->operat == "-") {
+                        result.push_back( Instruction { .type = Instruction::Type::NEG } );
+                    } else
+                    if (exp->operat == "not") {
+                        result.push_back( Instruction { .type = Instruction::Type::NOT } );
+                    } else
+                    if (exp->operat == "~") {
+                        result.push_back( Instruction { .type = Instruction::Type::BITNOT } );
+                    } else {
+                        throw std::runtime_error("Unknown operator " + exp->operat);
+                    }
+                } else {
+                    auto sub = compile_expression(exp->lhs.get());
+                    result.insert(result.end(), sub.begin(), sub.end());
+
+                    sub = compile_expression(exp->rhs.get());
+                    result.insert(result.end(), sub.begin(), sub.end());
+
+                    if (exp->operat == "<=") {
+                        result.push_back( Instruction { .type = Instruction::Type::LE } );
+                    } else
+                    if (exp->operat == "<") {
+                        result.push_back( Instruction { .type = Instruction::Type::LT } );
+                    } else
+                    if (exp->operat == ">=") {
+                        result.push_back( Instruction { .type = Instruction::Type::GE } );
+                    } else
+                    if (exp->operat == ">") {
+                        result.push_back( Instruction { .type = Instruction::Type::GT } );
+                    } else
+                    if (exp->operat == "==") {
+                        result.push_back( Instruction { .type = Instruction::Type::EQ } );
+                    } else
+                    if (exp->operat == "~=") {
+                        result.push_back( Instruction { .type = Instruction::Type::NEQ } );
+                    } else
+                    if (exp->operat == "..") {
+                        result.push_back( Instruction { .type = Instruction::Type::CONCAT } );
+                    } else
+                    if (exp->operat == "+") {
+                        result.push_back( Instruction { .type = Instruction::Type::ADD } );
+                    } else
+                    if (exp->operat == "-") {
+                        result.push_back( Instruction { .type = Instruction::Type::SUB } );
+                    } else
+                    if (exp->operat == "*") {
+                        result.push_back( Instruction { .type = Instruction::Type::MUL } );
+                    } else
+                    if (exp->operat == "%") {
+                        result.push_back( Instruction { .type = Instruction::Type::MOD } );
+                    } else
+                    if (exp->operat == "//") {
+                        result.push_back( Instruction { .type = Instruction::Type::DIV } );
+                    } else
+                    if (exp->operat == "/") {
+                        result.push_back( Instruction { .type = Instruction::Type::TRUEDIV } );
+                    } else
+                    if (exp->operat == "<<") {
+                        result.push_back( Instruction { .type = Instruction::Type::SHLEFT } );
+                    } else
+                    if (exp->operat == ">>") {
+                        result.push_back( Instruction { .type = Instruction::Type::SHRIGHT } );
+                    } else
+                    if (exp->operat == "and") {
+                        result.push_back( Instruction { .type = Instruction::Type::AND } );
+                    } else
+                    if (exp->operat == "or") {
+                        result.push_back( Instruction { .type = Instruction::Type::OR } );
+                    } else
+                    if (exp->operat == "&") {
+                        result.push_back( Instruction { .type = Instruction::Type::BITAND } );
+                    } else
+                    if (exp->operat == "|") {
+                        result.push_back( Instruction { .type = Instruction::Type::BITOR } );
+                    } else
+                    if (exp->operat == "~") {
+                        result.push_back( Instruction { .type = Instruction::Type::BITXOR } );
+                    } else
+                    if (exp->operat == "^") {
+                        result.push_back( Instruction { .type = Instruction::Type::POW } );
+                    } else {
+                        throw std::runtime_error("Unknown operator " + exp->operat);
+                    }
+                }
+            } break;
+
+            case LuaAST::Expression::Type::VAR: {
+                LuaAST::Var* var = (LuaAST::Var*)expression;
+
+                LuaAST::VarPart* base = var->base.get();
+                if (base->kind == LuaAST::VarPart::Kind::NAME) {
+                    result.push_back( 
+                        Instruction { 
+                            .type = Instruction::Type::LOAD,
+                            .name = ((LuaAST::VarPartName*)base)->name,
+                        } 
+                    );
+                } else {
+                    auto sub = compile_expression(((LuaAST::VarPartExp*)base)->exp.get());
+                    result.insert(result.end(), sub.begin(), sub.end());
+                }
+
+                for (auto &spec: var->specifications) {
+                    if (spec->kind == LuaAST::VarPart::Kind::NAME) {
+                        result.push_back( 
+                            Instruction { 
+                                .type = Instruction::Type::INDEX,
+                                .field = ((LuaAST::VarPartName*)spec.get())->name,
+                            } 
+                        );
+                    } else {
+                        auto sub = compile_expression(((LuaAST::VarPartExp*)spec.get())->exp.get());
+                        result.insert(result.end(), sub.begin(), sub.end());
+
+                        result.push_back( 
+                            Instruction { 
+                                .type = Instruction::Type::DYN_INDEX,
+                            } 
+                        );
+                    }
+                }
+            } break;
+
+            case LuaAST::Expression::Type::FUNCCALL: {
+                LuaAST::FuncCall* fc = (LuaAST::FuncCall*) expression;
+                // FUNCCALL,
+                // (e1)(a11, a12)
+                /*
+                    [Eval e1]
+                    METAINDEX __call
+                    [Eval a11]
+                    [Eval a12]
+                    
+                    CALL
+                */
+                // (e1):method(a11, a12)
+                /*
+                    [Eval e1]
+                    METAINDEX method
+                    [Eval a11]
+                    [Eval a12]
+                    
+                    CALL
+                */
+                // func(a11, a12)
+                /*
+                    [Eval a11]
+                    [Eval a12]
+
+                    LOAD func
+                    CALL
+                */
+                auto sub = compile_expression(fc->function.get());
+                result.insert(result.end(), sub.begin(), sub.end());
+
+                size_t I = fc->tails.size();
+                for (size_t t = 0; t < I; t++) {
+                    auto& tail = fc->tails[t];
+                    if (tail->name.has_value()) {
+                        result.push_back( 
+                            Instruction { 
+                                .type = Instruction::Type::METAINDEX,
+                                .metafield = tail->name.value()
+                            } 
+                        );
+                    } else {
+                        result.push_back( 
+                            Instruction { 
+                                .type = Instruction::Type::METAINDEX,
+                                .metafield = "__call"
+                            }
+                        );
+                    }
+                    
+                    size_t N = tail->args.size();
+                    for (size_t i=0; i<N; i++) {
+                        sub = compile_expression(tail->args[i].get());
+                        result.insert(result.end(), sub.begin(), sub.end());
+                    }
+                    if (t != I-1) {
+                        result.push_back( 
+                            Instruction { 
+                                .type = Instruction::Type::REV_CALL,
+                                .N = N,
+                                .M = 1,
+                            }
+                        );
+                    } else {
+                        result.push_back( 
+                            Instruction { 
+                                .type = Instruction::Type::REV_CALL,
+                                .N = N,
+                                .any_output = true,
+                            }
+                        );
+                    }
+                }
+            } break;
+
+            default: {
+                throw std::runtime_error("Unknown expression type: " + std::to_string((int)expression->type()));
+            } break;
+        }
+
+        return result;
+    }
+};
+
+size_t Compiler::uid = 0;
+
+#endif // COMPILER_COMPILER_H

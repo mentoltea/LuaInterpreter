@@ -232,7 +232,7 @@ struct Num_forSt: public Statement {
 
 struct Gen_forSt: public Statement {
     std::vector<std::string> vars;
-    std::vector< std::shared_ptr<Expression> > exps;
+    std::shared_ptr<Expression> exp;
 
     std::shared_ptr<Block> block;
 
@@ -245,10 +245,7 @@ struct Gen_forSt: public Statement {
             if (var != vars.back()) os << ", ";
         }
         os << "in ";
-        for (auto &exp: exps) {
-            exp->print(os, tabs);
-            if (exp != exps.back()) os << ", ";
-        }
+        exp->print(os, tabs);
         os << " do" << std::endl;
         block->print(os, tabs+1);
         insert_tabs(os, tabs);

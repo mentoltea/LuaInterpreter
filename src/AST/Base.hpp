@@ -41,51 +41,36 @@ struct Field;
 struct Statement: public Node {
     enum class Type {
         NONE,
-
         // doBlockStatement
-        DO_BLOCK,
-        
+        DO_BLOCK,        
         // assignmentStatement
-        ASSIGN,
-        
+        ASSIGN,        
         // declarationStatement
-        DECLARE,
-        
+        DECLARE,        
         // globalAttribStatement
-        ATTRIB,
-        
+        ATTRIB,        
         // funcdefStatement
-        FUNCDEF,
-        
+        FUNCDEF,        
         // whileStatement
-        WHILE,
-        
+        WHILE,        
         // repeatStatement
-        REPEAT,
-        
+        REPEAT,        
         // ifStatement
-        IF,
-        
+        IF,        
         // numericForStatement
-        NUM_FOR,
-        
+        NUM_FOR,        
         // genericForStatement
-        GEN_FOR,
-        
+        GEN_FOR,        
         // gotoStatement
-        GOTO,
-        
+        GOTO,        
         // labelStatement
-        LABEL,
-        
+        LABEL,        
         // breakStatement
-        BREAK,
-        
+        BREAK,        
         // funcCallStatement
         FUNCCALL,
-
         // returnStatement
-        RETURN,
+        RETURN,    
     };
 
     Block* parent;
@@ -97,8 +82,7 @@ struct Statement: public Node {
 };
 
 enum class ScopeSpec {
-    GLOBAL,
-    LOCAL
+    GLOBAL,    LOCAL
 };
 
 struct Block: public Node {

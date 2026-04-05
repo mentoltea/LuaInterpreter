@@ -8,7 +8,6 @@
 #include <stdint.h>
 #include <stdfloat>
 
-#include "rwlock.hpp"
 #include "AST.hpp"
 
 namespace LuaInterpreter {
@@ -32,7 +31,6 @@ public:
 };
 
 class Value {
-    RWLock lock;
 public:
     enum class Type {
         NIL,
@@ -45,12 +43,6 @@ public:
         TABLE,
     };
     virtual Type type() const = 0;
-
-    void rlock() {lock.read_lock();}
-    void runlock() {lock.read_unlock();}
-
-    void wlock() {lock.write_lock();}
-    void wunlock() {lock.write_unlock();}
 };
 
 } // LuaInterpreter

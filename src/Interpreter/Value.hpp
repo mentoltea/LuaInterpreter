@@ -191,7 +191,11 @@ public:
 class Function: public Value {
 public:
     virtual Type type() const override { return Type::FUNCTION; };
-    std::shared_ptr<LuaAST::FuncBody> body;  
+    // std::shared_ptr<LuaAST::FuncBody> body;  
+
+    // label
+    // args
+    // varg
 };
 
 class Thread: public Value {
@@ -235,10 +239,12 @@ public:
     }
 
     std::shared_ptr<Value> at(const Function &key) {
-        return func_table.at(key.body.get());
+        throw std::runtime_error("Fuction indexing");
+        // return func_table.at(key.body.get());
     }
     void set(const Function &key, std::shared_ptr<Value> value) {
-        func_table[key.body.get()] = value;
+        // func_table[key.body.get()] = value;
+        throw std::runtime_error("Fuction indexing");
     }
 
     std::shared_ptr<Value> at(const Userdata &key) {

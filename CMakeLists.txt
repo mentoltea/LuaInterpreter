@@ -66,6 +66,7 @@ file(GLOB_RECURSE HEADER_FILES
 add_executable(
     "luai"
     ${SRC_FILES}
+    ${HEADER_FILES}
     ${GENERATED_FILES}
 )
 
@@ -87,6 +88,7 @@ target_link_libraries(
 target_compile_options(
     "luai" PRIVATE
     -Wall -Wextra
+    -Wno-missing-field-initializers
     -Wno-unused-parameter
     -ggdb -O0
 )

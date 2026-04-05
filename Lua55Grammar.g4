@@ -30,7 +30,7 @@ statement:
     | ifStatement
 //         for Name ‘=’ exp ‘,’ exp [‘,’ exp] do block end | 
     | numericForStatement
-//         for namelist in explist do block end | 
+//         for namelist in exp do block end | 
     | genericForStatement
 //         goto Name | 
     | gotoStatement
