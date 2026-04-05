@@ -112,9 +112,9 @@ std::ostream& operator<<(std::ostream& os, Instruction& inst) {
         case Instruction::Type::GLOBATTR:   { os << "GLOBATTR " << inst.attr ; } break;
         case Instruction::Type::INDEX:      { os << "INDEX " << inst.field ; } break; 
         case Instruction::Type::DYN_INDEX:  { os << "DYN_INDEX" ; } break; 
-        case Instruction::Type::METAINDEX:  { os << "METAINDEX " << inst.field ; } break;
+        case Instruction::Type::METAINDEX:  { os << "METAINDEX " << inst.metafield ; } break;
         
-        case Instruction::Type::METAASSIGN_WHAT_WHOM:  { os << "METAASSIGN_WHAT_WHOM " << inst.field ; } break;
+        case Instruction::Type::METAASSIGN_WHAT_WHOM:  { os << "METAASSIGN_WHAT_WHOM " << inst.metafield ; } break;
 
         case Instruction::Type::ASSIGN_WHAT_WHOM: { 
             os << "ASSIGN_WHAT_WHOM " << inst.field ; 
