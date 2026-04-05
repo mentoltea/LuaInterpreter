@@ -168,10 +168,6 @@ public:
 
             auto compiled = compile_function(func);
             result.insert(result.end(), compiled.begin(), compiled.end());
-            
-            // на случай, если нет return
-            result.push_back( Instruction {.type = Instruction::Type::PUT_NIL} );
-            result.push_back( Instruction {.type = Instruction::Type::RET, .N = 1} );
         }
 
         return result;
@@ -231,6 +227,10 @@ public:
 
         result.push_back( Instruction {.type = Instruction::Type::POP_SCOPE} );
         scopes_put.top()--;
+
+        // на случай, если нет return
+        result.push_back( Instruction {.type = Instruction::Type::PUT_NIL} );
+        result.push_back( Instruction {.type = Instruction::Type::RET, .N = 1} );
 
         prefixes.pop_back();
         return result;
@@ -515,7 +515,7 @@ public:
                             result.push_back(
                                 Instruction {
                                     .type = Instruction::Type::INDEX,
-                                    .name = name->specifications[i],
+                                    .field = name->specifications[i],
                                 }
                             );
                         }
@@ -560,7 +560,7 @@ public:
                             result.push_back(
                                 Instruction {
                                     .type = Instruction::Type::INDEX,
-                                    .name = name->specifications[i],
+                                    .field = name->specifications[i],
                                 }
                             );
                         }

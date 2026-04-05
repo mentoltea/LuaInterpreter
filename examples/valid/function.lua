@@ -40,3 +40,13 @@ function factorial(n)
         return n * factorial(n - 1)
     end
 end
+
+obj = {}
+obj.subobj = {
+    x = 10
+}
+function obj.subobj:print() 
+    print("x = ", x)
+end
+
+obj.subobj:print()
