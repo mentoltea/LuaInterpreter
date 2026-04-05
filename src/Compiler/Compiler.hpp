@@ -145,12 +145,20 @@ class Compiler {
         return ss.str();
     }
 
-    std::queue< std::pair<std::string, LuaAST::FuncBody*> > functions_to_compile;
+    struct FunctionToCompile {
+        std::string funcname;
+        LuaAST::FuncBody* body;
+        bool is_method = false;
+    };
+    std::queue< FunctionToCompile > functions_to_compile;
 public:
     std::vector< Instruction > compile(std::shared_ptr<LuaAST::Block> block) {
         LuaAST::FuncBody entry;
         entry.block = block;
-        functions_to_compile.push( {"_start", &entry} );
+        functions_to_compile.push( {
+            .funcname = "_start", 
+            .body = &entry,
+        } );
 
         std::vector<Instruction> result;
 
@@ -158,7 +166,7 @@ public:
             auto func = functions_to_compile.front();
             functions_to_compile.pop();
 
-            auto compiled = compile_function(func.first, func.second);
+            auto compiled = compile_function(func);
             result.insert(result.end(), compiled.begin(), compiled.end());
             
             // на случай, если нет return
@@ -169,11 +177,7 @@ public:
         return result;
     }
 
-    std::vector< Instruction > compile_function(const std::string& funcname, LuaAST::FuncBody *body) {
-        std::cout << "compile_function" << funcname << std::endl;
-        body->print(std::cout);
-        std::cout << std::endl;
-
+    std::vector< Instruction > compile_function(FunctionToCompile &func) {
         // считаем, что CALL в runtime всё подготовит сам:
         // создаст новый стек
         // переложит все аргументы на стек
@@ -184,19 +188,19 @@ public:
 
         break_labels = std::stack< std::string >();
         scopes_put = std::stack< size_t > (); scopes_put.push(0);
-        prefixes.push_back(funcname);
+        prefixes.push_back(func.funcname);
         
         // std::cout << "point 1" << std::endl;
         
         result.push_back( 
             Instruction { 
                 .type = Instruction::Type::LABEL,
-                .label = funcname,
+                .label = func.funcname,
             } 
         );
 
         // std::cout << "point 2" << std::endl;
-        size_t N = body->params.size();
+        size_t N = func.body->params.size();
 
         result.push_back( Instruction {.type = Instruction::Type::PUT_SCOPE} );
         scopes_put.top()++;
@@ -207,14 +211,22 @@ public:
                 result.push_back( 
                     Instruction { 
                         .type = Instruction::Type::SET_LOCAL,
-                        .name = body->params[i]
+                        .name = func.body->params[i]
                     } 
                 );
             }
         }
+        if (func.is_method) {
+            result.push_back( 
+                Instruction { 
+                    .type = Instruction::Type::SET_LOCAL,
+                    .name = "self",
+                }
+            );
+        }
         // std::cout << "point 4" << std::endl;
 
-        auto block = compile_block(body->block.get());
+        auto block = compile_block(func.body->block.get());
         result.insert(result.end(), block.begin(), block.end());
 
         result.push_back( Instruction {.type = Instruction::Type::POP_SCOPE} );
@@ -303,7 +315,7 @@ public:
                             st->print(std::cerr);
                             throw std::runtime_error("Compilation: Assignment");
                         }
-                        LuaAST::VarPartName* varname = (LuaAST::VarPartName*) var;
+                        LuaAST::VarPartName* varname = (LuaAST::VarPartName*) var->base.get();
                         result.push_back(
                             Instruction { .type = Instruction::Type::STORE, .name = varname->name }
                         );
@@ -461,8 +473,13 @@ public:
                     for (auto& spec: name->specifications) {
                         funcname += "." + spec;
                     }
-                    funcname += ":" + name->kind;
-                    functions_to_compile.push( { funcname, st->body.get() } );
+                    if (!name->kind.empty()) funcname += ":" + name->kind;
+                    
+                    functions_to_compile.push( { 
+                        .funcname = funcname, 
+                        .body = st->body.get(),
+                        .is_method = !name->kind.empty(),
+                    } );
 
                     result.push_back(
                         Instruction {
@@ -1576,6 +1593,8 @@ public:
             case LuaAST::Expression::Type::FUNCCALL: {
                 LuaAST::FuncCall* fc = (LuaAST::FuncCall*) expression;
                 // FUNCCALL,
+                // obj:method(a1, a2)
+                // => obj.method(obj, a1, a2)
                 // (e1)(a11, a12)
                 /*
                     [Eval e1]
@@ -1608,6 +1627,7 @@ public:
                 size_t I = fc->tails.size();
                 for (size_t t = 0; t < I; t++) {
                     auto& tail = fc->tails[t];
+                    bool is_method = false;
                     if (tail->name.has_value()) {
                         result.push_back( 
                             Instruction { 
@@ -1615,13 +1635,7 @@ public:
                                 .metafield = tail->name.value()
                             } 
                         );
-                    } else {
-                        result.push_back( 
-                            Instruction { 
-                                .type = Instruction::Type::METAINDEX,
-                                .metafield = "__call"
-                            }
-                        );
+                        is_method = true;
                     }
                     
                     size_t N = tail->args.size();
@@ -1629,6 +1643,9 @@ public:
                         sub = compile_expression(tail->args[i].get());
                         result.insert(result.end(), sub.begin(), sub.end());
                     }
+                    
+                    if (is_method) N += 1; // self object also is argument
+
                     if (t != I-1) {
                         result.push_back( 
                             Instruction { 
