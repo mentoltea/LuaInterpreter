@@ -203,7 +203,7 @@ public:
         // std::cout << "point 3" << std::endl;
 
         if (N > 0) {
-            for (size_t i = N-1; i > 0; i--) {
+            for (int i = N-1; i >= 0; i--) {
                 result.push_back( 
                     Instruction { 
                         .type = Instruction::Type::SET_LOCAL,
@@ -291,6 +291,24 @@ public:
                     INDEX field_n-1
                     ASSIGN_WHAT_WHOM fieldn
                 */
+
+                // v1, v2, .. vn = e1, e2, ..., em
+                /*
+                    PUT_BARRIER
+                    [Eval em]
+                    ...
+                    [Eval e1]
+
+                    [Preindex v1]
+                    ASSIGN_WHAT_WHOM
+                    
+                    ... 
+
+                    [Preindex vn]
+                    ASSIGN_WHAT_WHOM
+                    
+                    POP_BARRIER
+                */
                 size_t left_N = st->lhs.size();
                 size_t right_N = st->rhs.size();
 
@@ -300,14 +318,14 @@ public:
                     throw std::runtime_error("Compilation: Assignment");
                 }
 
-                for (size_t i=0; i<left_N; i++) {
-                    if (i < right_N) {
-                        auto exp = compile_expression(st->rhs[i].get());
-                        result.insert(result.end(), exp.begin(), exp.end());
-                    } else {
-                        result.push_back(Instruction { .type = Instruction::Type::PUT_NIL });
-                    }
+                result.push_back(Instruction { .type = Instruction::Type::PUT_BARRIER });
 
+                for (int i=right_N-1; i>=0; i--) {
+                    auto exp = compile_expression(st->rhs[i].get(), -1, true);
+                    result.insert(result.end(), exp.begin(), exp.end());
+                }
+
+                for (size_t i=0; i<left_N; i++) {
                     auto var = st->lhs[i].get();
                     if (var->specifications.size() == 0) {
                         if (var->base->kind != LuaAST::VarPart::Kind::NAME) {
@@ -323,7 +341,8 @@ public:
                         LuaAST::Var copy = *var;
                         copy.specifications.pop_back();
 
-                        auto exp = compile_expression(&copy);
+                        // preindex
+                        auto exp = compile_expression(&copy, 1);
                         result.insert(result.end(), exp.begin(), exp.end());
 
                         auto last = var->specifications.back().get();
@@ -336,7 +355,7 @@ public:
                             );   
                         } else {
                             LuaAST::VarPartExp* varexp = (LuaAST::VarPartExp*) last;
-                            exp = compile_expression(varexp->exp.get());
+                            exp = compile_expression(varexp->exp.get(), 1);
                             result.insert(result.end(), exp.begin(), exp.end());
                             result.push_back(
                                 Instruction { 
@@ -346,6 +365,8 @@ public:
                         }
                     }
                 }
+
+                result.push_back(Instruction { .type = Instruction::Type::POP_BARRIER });
             } break;
 
             case LuaAST::Statement::Type::DECLARE: {
@@ -353,49 +374,33 @@ public:
                 // DECLARE,
                 // local common_attr var1 attr1, ... varn attrn = exp1, ... expm
                 /*
+                    PUT_BARRIER
+                    [Eval expm]
+                    ...
                     [Eval exp1]
+
                     SET_LOCAL var1
                     SET_ATTR var1 attr1
                     SET_ATTR var1 common_attr
-                    
-                    [Eval expm]
-                    SET_LOCAL varm
-                    SET_ATTR varm attrm
-                    SET_ATTR varm common_attr
-                    
-                    [Eval nil]
+                    ...
                     SET_LOCAL varn
                     SET_ATTR varn attrn
                     SET_ATTR varn common_attr
+
+                    POP_BARRIER
                 */
-                // global common_attr var1 attr1, ... varn attrn = exp1, ... expm
-                /*
-                    [Eval exp1]
-                    SET_GLOBAL var1
-                    SET_ATTR var1 attr1
-                    SET_ATTR var1 common_attr
-                    
-                    [Eval expm]
-                    SET_GLOBAL varm
-                    SET_ATTR varm attrm
-                    SET_ATTR varm common_attr
-                    
-                    [Eval nil]
-                    SET_GLOBAL varn
-                    SET_ATTR varn attrn
-                    SET_ATTR varn common_attr
-                */
+                
                 size_t left_N = st->lhs.size();
                 size_t right_N = st->rhs.size();
 
+                result.push_back(Instruction { .type = Instruction::Type::PUT_BARRIER });
+
+                for (int i=right_N-1; i>=0; i--) {
+                    auto exp = compile_expression(st->rhs[i].get(), -1, true);
+                    result.insert(result.end(), exp.begin(), exp.end());
+                }
+
                 for (size_t i = 0; i < left_N; i++) {
-                    if (i < right_N) {
-                        auto exp = compile_expression(st->rhs[i].get());
-                        result.insert(result.end(), exp.begin(), exp.end());
-                    } else {
-                        result.push_back(Instruction { .type = Instruction::Type::PUT_NIL });
-                    }
-                    
                     auto pair = st->lhs[i];
                     if (st->scope == LuaAST::ScopeSpec::LOCAL) {
                         result.push_back(
@@ -445,6 +450,7 @@ public:
                         }
                     }
                 }
+                result.push_back(Instruction { .type = Instruction::Type::POP_BARRIER });
             } break;
 
             case LuaAST::Statement::Type::ATTRIB: {
@@ -634,7 +640,7 @@ public:
                         .label = while_start,
                     } 
                 );
-                auto cond = compile_expression(st->cond.get());
+                auto cond = compile_expression(st->cond.get(), 1);
                 result.insert(result.end(), cond.begin(), cond.end());
                 result.push_back( Instruction { .type = Instruction::Type::NOT } );
                 result.push_back( 
@@ -699,7 +705,7 @@ public:
                         .label = repeat_start,
                     } 
                 );
-                auto cond = compile_expression(st->un_cond.get());
+                auto cond = compile_expression(st->un_cond.get(), 1);
                 result.insert(result.end(), cond.begin(), cond.end());
                 result.push_back( 
                     Instruction { 
@@ -769,7 +775,7 @@ public:
                 std::string skip = prefix + ustr + "__if_skip_";
 
                 // if
-                auto exp = compile_expression( st->branch_if.first.get() );
+                auto exp = compile_expression( st->branch_if.first.get() , 1);
                 result.insert(result.end(), exp.begin(), exp.end());
                 result.push_back( Instruction { .type = Instruction::Type::NOT } );
                 result.push_back( 
@@ -803,7 +809,7 @@ public:
                 for (size_t i=0; i < st->branch_elseif.size(); i++) {
                     auto& branch = st->branch_elseif[i];
 
-                    exp = compile_expression( branch.first.get() );
+                    exp = compile_expression( branch.first.get() , 1);
                     result.insert(result.end(), exp.begin(), exp.end());
                     result.push_back( Instruction { .type = Instruction::Type::NOT } );
                     result.push_back( 
@@ -902,7 +908,7 @@ public:
                 break_labels.push(end_label);
                 scopes_put.push(0);
 
-                auto exp = compile_expression(st->from.get());
+                auto exp = compile_expression(st->from.get(), 1);
                 result.insert(result.end(), exp.begin(), exp.end());
                 result.push_back( 
                     Instruction { 
@@ -911,7 +917,7 @@ public:
                     } 
                 );
 
-                exp = compile_expression(st->to.get());
+                exp = compile_expression(st->to.get(), 1);
                 result.insert(result.end(), exp.begin(), exp.end());
                 result.push_back( 
                     Instruction { 
@@ -921,7 +927,7 @@ public:
                 );
 
                 if (st->step.has_value()) {
-                    exp = compile_expression(st->step.value().get());
+                    exp = compile_expression(st->step.value().get(), 1);
                     result.insert(result.end(), exp.begin(), exp.end());
                 } else {
                     result.push_back( 
@@ -1078,7 +1084,7 @@ public:
                 result.push_back( Instruction { .type = Instruction::Type::PUT_SCOPE } );
                 scopes_put.top()++;
                 
-                auto exp = compile_expression(st->exp.get());
+                auto exp = compile_expression(st->exp.get(), 3);
                 result.insert(result.end(), exp.begin(), exp.end());
 
                 break_labels.push(end_label);
@@ -1234,30 +1240,32 @@ public:
 
             case LuaAST::Statement::Type::FUNCCALL: {
                 LuaAST::FunccallSt* st = (LuaAST::FunccallSt*) statement;
-                auto exp = compile_expression(st->funccall.get());
+                auto exp = compile_expression(st->funccall.get(), -1);
                 result.insert(result.end(), exp.begin(), exp.end());
             } break;
 
             case LuaAST::Statement::Type::RETURN: {
                 // RETURN e1, e2, en
                 /*
+                    PUT_STACK
                     [Eval e1]
                     [Eval e2]
                     ...
                     [Eval en]
-                    RET N
+                    RET WHOLE_STACK
                 */ 
                 LuaAST::ReturnSt* st = (LuaAST::ReturnSt*) statement;
 
+                result.push_back( Instruction { .type = Instruction::Type::PUT_STACK } );
                 size_t N = st->values.size();
                 for (size_t i=0; i<N; i++) {
-                    auto exp = compile_expression(st->values[i].get());
+                    auto exp = compile_expression(st->values[i].get(), -1);
                     result.insert(result.end(), exp.begin(), exp.end());
                 }
                 result.push_back( 
                     Instruction { 
                         .type = Instruction::Type::RET,
-                        .N = N
+                        .whole_stack = true,
                     } 
                 );
             } break;
@@ -1278,12 +1286,18 @@ public:
         return result;
     }
 
-    std::vector< Instruction > compile_expression(LuaAST::Expression *expression) {
+    std::vector< Instruction > compile_expression(
+        LuaAST::Expression *expression,
+        int expect_stack_size, // -1 for any size
+        bool reversed = false
+    ) {
         std::vector< Instruction > result;
+        int stack_size = 0; 
 
         switch (expression->type()) {
             case LuaAST::Expression::Type::LITERAL: {
                 LuaAST::Literal* exp = (LuaAST::Literal*) expression;
+                stack_size = 1;
                 switch (exp->kind) {
                     case LuaAST::Literal::Kind::NIL: {
                         result.push_back( 
@@ -1345,6 +1359,7 @@ public:
 
             case LuaAST::Expression::Type::FUNC_ANON: {
                 LuaAST::FuncAnon* exp = (LuaAST::FuncAnon*) expression;
+                stack_size = 1;
 
                 std::string funcname = get_prefix() + get_ustr() + "__lambda";
                 functions_to_compile.push( { funcname, exp->body.get() } );
@@ -1361,6 +1376,7 @@ public:
 
             case LuaAST::Expression::Type::TABLE_CONSTR: {
                 LuaAST::TableConstr* exp = (LuaAST::TableConstr*) expression;
+                stack_size = 1;
                 // TABLE_CONSTR,
                 // { ... }
                 /*
@@ -1406,10 +1422,10 @@ public:
 
                     switch (field->kind) {
                         case LuaAST::Field::Kind::INDEXED: {
-                            auto sub = compile_expression(field->lhs.get());
+                            auto sub = compile_expression(field->lhs.get(), 1);
                             result.insert(result.end(), sub.begin(), sub.end());
 
-                            sub = compile_expression(field->rhs.get());
+                            sub = compile_expression(field->rhs.get(), 1);
                             result.insert(result.end(), sub.begin(), sub.end());
 
                             result.push_back( 
@@ -1420,7 +1436,7 @@ public:
                         } break;
 
                         case LuaAST::Field::Kind::NAMED: {
-                            auto sub = compile_expression(field->rhs.get());
+                            auto sub = compile_expression(field->rhs.get(), 1);
                             result.insert(result.end(), sub.begin(), sub.end());
 
                             result.push_back( 
@@ -1439,7 +1455,7 @@ public:
                                 } 
                             );
 
-                            auto sub = compile_expression(field->rhs.get());
+                            auto sub = compile_expression(field->rhs.get(), 1);
                             result.insert(result.end(), sub.begin(), sub.end());
 
                             result.push_back( 
@@ -1459,9 +1475,10 @@ public:
 
             case LuaAST::Expression::Type::OPERATION: {
                 LuaAST::Operation* exp = (LuaAST::Operation*) expression;
+                stack_size = 1;
 
                 if (exp->kind == LuaAST::Operation::Kind::UNOP) {
-                    auto sub = compile_expression(exp->lhs.get());
+                    auto sub = compile_expression(exp->lhs.get(), 1);
                     result.insert(result.end(), sub.begin(), sub.end());
 
                     if (exp->operat == "#") {
@@ -1479,10 +1496,10 @@ public:
                         throw std::runtime_error("Unknown operator " + exp->operat);
                     }
                 } else {
-                    auto sub = compile_expression(exp->lhs.get());
+                    auto sub = compile_expression(exp->lhs.get(), 1);
                     result.insert(result.end(), sub.begin(), sub.end());
 
-                    sub = compile_expression(exp->rhs.get());
+                    sub = compile_expression(exp->rhs.get(), 1);
                     result.insert(result.end(), sub.begin(), sub.end());
 
                     if (exp->operat == "<=") {
@@ -1555,6 +1572,7 @@ public:
 
             case LuaAST::Expression::Type::VAR: {
                 LuaAST::Var* var = (LuaAST::Var*)expression;
+                stack_size = 1;
 
                 LuaAST::VarPart* base = var->base.get();
                 if (base->kind == LuaAST::VarPart::Kind::NAME) {
@@ -1565,7 +1583,7 @@ public:
                         } 
                     );
                 } else {
-                    auto sub = compile_expression(((LuaAST::VarPartExp*)base)->exp.get());
+                    auto sub = compile_expression(((LuaAST::VarPartExp*)base)->exp.get(), 1);
                     result.insert(result.end(), sub.begin(), sub.end());
                 }
 
@@ -1578,7 +1596,7 @@ public:
                             } 
                         );
                     } else {
-                        auto sub = compile_expression(((LuaAST::VarPartExp*)spec.get())->exp.get());
+                        auto sub = compile_expression(((LuaAST::VarPartExp*)spec.get())->exp.get(), 1);
                         result.insert(result.end(), sub.begin(), sub.end());
 
                         result.push_back( 
@@ -1592,6 +1610,7 @@ public:
 
             case LuaAST::Expression::Type::FUNCCALL: {
                 LuaAST::FuncCall* fc = (LuaAST::FuncCall*) expression;
+                stack_size = expect_stack_size;
                 // FUNCCALL,
                 // obj:method(a1, a2)
                 // => obj.method(obj, a1, a2)
@@ -1621,13 +1640,34 @@ public:
                     LOAD func
                     CALL
                 */
-                auto sub = compile_expression(fc->function.get());
+
+                // CALL
+                /*
+                    PUT_STACK
+                    [Eval args]
+                    function
+                    CALL stack
+                    MOVE_STACK expected_size
+                */
+               // REV_CALL
+               /*
+                    PUT_STACK
+                    function
+                    [Eval args]
+                    CALL stack
+                    MOVE_STACK expected_size
+               */
+
+                result.push_back( 
+                    Instruction { .type = Instruction::Type::PUT_STACK} 
+                );
+
+                auto sub = compile_expression(fc->function.get(), 1);
                 result.insert(result.end(), sub.begin(), sub.end());
 
                 size_t I = fc->tails.size();
                 for (size_t t = 0; t < I; t++) {
                     auto& tail = fc->tails[t];
-                    bool is_method = false;
                     if (tail->name.has_value()) {
                         result.push_back( 
                             Instruction { 
@@ -1635,22 +1675,21 @@ public:
                                 .metafield = tail->name.value()
                             } 
                         );
-                        is_method = true;
                     }
                     
                     size_t N = tail->args.size();
                     for (size_t i=0; i<N; i++) {
-                        sub = compile_expression(tail->args[i].get());
+                        sub = compile_expression(tail->args[i].get(), -1);
                         result.insert(result.end(), sub.begin(), sub.end());
                     }
                     
-                    if (is_method) N += 1; // self object also is argument
 
                     if (t != I-1) {
                         result.push_back( 
                             Instruction { 
                                 .type = Instruction::Type::REV_CALL,
-                                .N = N,
+                                // .N = N,
+                                .whole_stack = true,
                                 .M = 1,
                             }
                         );
@@ -1658,17 +1697,47 @@ public:
                         result.push_back( 
                             Instruction { 
                                 .type = Instruction::Type::REV_CALL,
-                                .N = N,
+                                // .N = N,
+                                .whole_stack = true,
                                 .any_output = true,
                             }
                         );
                     }
+                }
+
+                if (expect_stack_size < 0) {
+                    result.push_back( 
+                        Instruction { 
+                            .type = Instruction::Type::MOVE_STACK,
+                            .reverse_stack = reversed,
+                            .whole_stack = true,
+                        } 
+                    );
+                } else {
+                    result.push_back( 
+                        Instruction { 
+                            .type = Instruction::Type::MOVE_STACK,
+                            .reverse_stack = reversed,
+                            .N = (size_t) expect_stack_size,
+                        } 
+                    );
                 }
             } break;
 
             default: {
                 throw std::runtime_error("Unknown expression type: " + std::to_string((int)expression->type()));
             } break;
+        }
+
+        if (expect_stack_size != -1) {
+            while (expect_stack_size < stack_size) {
+                result.push_back( Instruction { .type = Instruction::Type::DISCARD } );
+                stack_size--;
+            }
+            while (expect_stack_size > stack_size) {
+                result.push_back( Instruction { .type = Instruction::Type::PUT_NIL } );
+                stack_size++;
+            }
         }
 
         return result;

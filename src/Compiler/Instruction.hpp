@@ -16,6 +16,7 @@ struct Instruction {
         PUT_STACK,
         POP_STACK,
         CLEAR_STACK,
+        MOVE_STACK,
 
         LOAD,
         STORE,
@@ -50,6 +51,9 @@ struct Instruction {
         PUT_TABLE,
         PUT_FUNC,
 
+        PUT_BARRIER,
+        POP_BARRIER,
+
         DISCARD,
         DUP,
 
@@ -80,7 +84,9 @@ struct Instruction {
 
     std::string label;
 
+    bool reverse_stack = false;
     // input size
+    bool whole_stack = false;
     size_t N;
 
     // output size
@@ -102,6 +108,17 @@ std::ostream& operator<<(std::ostream& os, Instruction& inst) {
         case Instruction::Type::PUT_STACK:  { os << "PUT_STACK" ; } break;
         case Instruction::Type::POP_STACK:  { os << "POP_STACK" ; } break;
         case Instruction::Type::CLEAR_STACK:  { os << "CLEAR_STACK" ; } break;
+        case Instruction::Type::MOVE_STACK:  { 
+            os << "MOVE_STACK " ;
+            if (inst.whole_stack) os << "stack";
+            else os << inst.N;
+            os << " ";
+            if (inst.reverse_stack) {
+                os << "reverse";
+            } else {
+                os << "direct";
+            }
+        } break;
         
         case Instruction::Type::LOAD:       { os << "LOAD " << inst.name ; } break;
         case Instruction::Type::STORE:      { os << "STORE " << inst.name ; } break;
@@ -134,16 +151,26 @@ std::ostream& operator<<(std::ostream& os, Instruction& inst) {
         case Instruction::Type::LABEL:      { os << "LABEL " << inst.label ; } break;
 
         case Instruction::Type::CALL:       { 
-            os << "CALL " << inst.N << " " ;
+            os << "CALL ";
+            if (inst.whole_stack) os << "stack";
+            else os << inst.N;
+            os << " " ;
             if (inst.any_output) os << "any";
             else os << inst.M;
         } break;
         case Instruction::Type::REV_CALL:       { 
-            os << "REV_CALL " << inst.N << " " ;
+            os << "REV_CALL ";
+            if (inst.whole_stack) os << "stack";
+            else os << inst.N;
+            os << " " ;
             if (inst.any_output) os << "any";
             else os << inst.M;
         } break;
-        case Instruction::Type::RET:        { os << "RET " << inst.N ; } break;
+        case Instruction::Type::RET:        { 
+            os << "RET ";
+            if (inst.whole_stack) os << "stack";
+            else os << inst.N ; 
+        } break;
 
         case Instruction::Type::PUT_NIL:    { os << "PUT_NIL" ; } break;
         case Instruction::Type::PUT_TRUE:   { os << "PUT_TRUE" ; } break;
@@ -158,6 +185,9 @@ std::ostream& operator<<(std::ostream& os, Instruction& inst) {
         case Instruction::Type::PUT_FUNC:  { 
             os << "PUT_FUNC " << inst.label << " " << inst.N << " " << inst.name; 
         } break;
+
+        case Instruction::Type::PUT_BARRIER:  { os << "PUT_BARIER" ; } break;
+        case Instruction::Type::POP_BARRIER:  { os << "POP_BARIER" ; } break;
 
         case Instruction::Type::DISCARD:  { 
             os << "DISCARD"; 
