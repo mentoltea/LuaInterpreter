@@ -3,7 +3,7 @@
 
 #include "Interpreter/Base.hpp"
 #include "Interpreter/Value.hpp"
-
 #include "Interpreter/Static.hpp"
+#include "Interpreter/Core.hpp"
 
 #endif // INTERPRETER_H

@@ -7,8 +7,7 @@
 #include <thread>
 #include <stdint.h>
 #include <stdfloat>
-
-#include "AST.hpp"
+#include <vector>
 
 namespace LuaInterpreter {
 
@@ -33,6 +32,7 @@ public:
 class Value {
 public:
     enum class Type {
+        BARRIER,
         NIL,
         BOOLEAN,
         NUMBER,
@@ -44,6 +44,13 @@ public:
     };
     virtual Type type() const = 0;
 };
+
+class Executioner;
+
+typedef std::vector< std::shared_ptr<Value> > (*cxx_func) (
+    Executioner* exec,
+    std::vector< std::shared_ptr<Value> > args
+);
 
 } // LuaInterpreter
 

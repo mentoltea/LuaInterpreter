@@ -198,8 +198,8 @@ public:
         // std::cout << "point 2" << std::endl;
         size_t N = func.body->params.size();
 
-        result.push_back( Instruction {.type = Instruction::Type::PUT_SCOPE} );
-        scopes_put.top()++;
+        // result.push_back( Instruction {.type = Instruction::Type::PUT_SCOPE} );
+        // scopes_put.top()++;
         // std::cout << "point 3" << std::endl;
 
         if (N > 0) {
@@ -225,8 +225,8 @@ public:
         auto block = compile_block(func.body->block.get());
         result.insert(result.end(), block.begin(), block.end());
 
-        result.push_back( Instruction {.type = Instruction::Type::POP_SCOPE} );
-        scopes_put.top()--;
+        // result.push_back( Instruction {.type = Instruction::Type::POP_SCOPE} );
+        // scopes_put.top()--;
 
         // на случай, если нет return
         result.push_back( Instruction {.type = Instruction::Type::PUT_NIL} );
@@ -237,9 +237,6 @@ public:
     }
 
     std::vector< Instruction > compile_block(LuaAST::Block *block) {
-        std::cout << "compile_block" << std::endl;
-        block->print(std::cout);
-        std::cout << std::endl;
 
         std::vector< Instruction > result;
         for (auto st: block->statements) {
@@ -252,9 +249,6 @@ public:
     std::vector< Instruction > compile_statement(LuaAST::Statement *statement) {
         std::vector< Instruction > result;
 
-        std::cout << "compile_statement" << std::endl;
-        statement->print(std::cout);
-        std::cout << std::endl;
 
         switch (statement->type()) {
             case LuaAST::Statement::Type::DO_BLOCK: {

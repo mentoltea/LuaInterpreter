@@ -8,6 +8,10 @@ namespace LuaInterpreter {
 
 namespace LuaValue {
 
+class Barrier: public Value {
+    virtual Type type() const override { return Type::BARRIER; };
+};
+
 class Nil: public Value {
     virtual Type type() const override { return Type::NIL; };
 };
@@ -185,6 +189,9 @@ public:
 class String: public Value {
 public:
     virtual Type type() const override { return Type::STRING; };
+
+    String() {}
+    String(const std::string& str): value(str) {}
     std::string value;
 };
 
@@ -193,9 +200,28 @@ public:
     virtual Type type() const override { return Type::FUNCTION; };
     // std::shared_ptr<LuaAST::FuncBody> body;  
 
-    // label
-    // args
-    // varg
+    Function(const std::string& label, size_t arg_N, const std::string& varg) {
+        this->label = label;
+        this->func = nullptr;
+        this->arg_N = arg_N;
+        this->varg = varg;
+    }
+
+    Function(cxx_func func, size_t arg_N, const std::string& varg) {
+        this->func = func;
+        this->arg_N = arg_N;
+        this->varg = varg;
+    }
+
+    cxx_func func;
+    std::string label;
+    size_t arg_N;
+    std::string varg = "varg";
+
+    std::string key() const {
+        if (func) return "cxx_func__" + std::to_string((int64_t) func);
+        return label;
+    }
 };
 
 class Thread: public Value {
@@ -217,10 +243,27 @@ public:
 private:
     std::unordered_map< std::string , std::shared_ptr<Value> > string_table;
     std::unordered_map< std::int64_t , std::shared_ptr<Value> > int_table;
-    // std::unordered_map< std::float64_t, std::shared_ptr<Value> > float_table;
-    std::unordered_map< LuaAST::FuncBody* , std::shared_ptr<Value> > func_table;
+
+    // label -> value
+    std::unordered_map< std::string , std::shared_ptr<Value> > func_table;
     std::unordered_map< void* , std::shared_ptr<Value> > data_table;
 public:
+    std::shared_ptr<Value> at(const Value &key);
+    void set(const Value &key, std::shared_ptr<Value> value);
+
+    std::shared_ptr<Value> at(size_t key) {
+        return int_table.at(key);
+    }
+    void set(size_t key, std::shared_ptr<Value> value) {
+        int_table[key];
+    }
+
+    std::shared_ptr<Value> at(const std::string &key) {
+        return string_table.at(key);
+    }
+    void set(const std::string &key, std::shared_ptr<Value> value) {
+        string_table[key] = value;
+    }
 
     std::shared_ptr<Value> at(const String &key) {
         return string_table.at(key.value);
@@ -239,12 +282,10 @@ public:
     }
 
     std::shared_ptr<Value> at(const Function &key) {
-        throw std::runtime_error("Fuction indexing");
-        // return func_table.at(key.body.get());
+        return func_table.at(key.key());
     }
     void set(const Function &key, std::shared_ptr<Value> value) {
-        // func_table[key.body.get()] = value;
-        throw std::runtime_error("Fuction indexing");
+        func_table[key.key()] = value;
     }
 
     std::shared_ptr<Value> at(const Userdata &key) {

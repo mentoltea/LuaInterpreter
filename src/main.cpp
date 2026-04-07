@@ -2,8 +2,8 @@
 #include "generated/Lua55GrammarLexer.h"
 #include "generated/Lua55GrammarParser.h"
 #include "generated/Lua55GrammarListener.h"
-#include "Interpreter.hpp"
 #include "Compiler/Compiler.hpp"
+#include "Interpreter.hpp"
 
 int main(int argc, char** argv) {
     if (argc < 2) {

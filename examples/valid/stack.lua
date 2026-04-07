@@ -81,9 +81,6 @@ for i = 1, table_length(primes) do
     io.write(primes[i], " ")
 end
 io.write("\n")
-goto END
-
-::END::
 
 local func = function (a) 
     io.write("lambda func: ", a)
