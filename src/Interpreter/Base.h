@@ -21,12 +21,8 @@ class Value;
 class Metatable {
     std::unordered_map< std::string , std::shared_ptr<Value> > data;
 public:
-    std::shared_ptr<Value> at(const std::string &key) {
-        return data.at(key);
-    }
-    void set(const std::string &key, std::shared_ptr<Value> value) {
-        data[key] = value;
-    }
+    std::shared_ptr<Value> at(const std::string &key);
+    void set(const std::string &key, std::shared_ptr<Value> value);
 };
 
 class Value {

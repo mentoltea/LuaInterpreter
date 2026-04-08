@@ -1,0 +1,221 @@
+#ifndef INTERPRETER_CORE_H
+#define INTERPRETER_CORE_H
+
+#include "Base.h"
+#include "Value.h"
+#include "Compiler/Instruction.h"
+
+#include <unordered_map>
+#include <memory>
+#include <stack>
+#include <algorithm>
+
+namespace LuaInterpreter {
+
+struct Scope {
+    std::unordered_map< std::string, std::shared_ptr<Value> > locals;
+
+    std::shared_ptr<Value> get(const std::string &name);
+    void set(const std::string &name, std::shared_ptr<Value> value);
+};
+
+class Interpreter {
+public:
+    Scope global;
+    std::shared_ptr<Value> get(const std::string &name);
+    void set(const std::string &name, std::shared_ptr<Value> value);
+
+    std::vector<Instruction> program;
+
+    std::vector< std::unique_ptr< Executioner > > workers;
+
+    std::unordered_map< std::string, size_t > labels;
+    
+    void collect_labels();
+
+    Interpreter(
+        const std::vector< Instruction >& program
+    );
+
+    bool run();
+};
+
+struct Executioner {
+public:
+    Interpreter *g; 
+    size_t ip;
+    std::stack < size_t > ret_addr;
+
+    // 0 - begining
+    std::stack <
+        std::vector< Scope > 
+    > scopes;
+    std::shared_ptr<Value> get(const std::string &name);
+    void set(const std::string &name, std::shared_ptr<Value> value);
+
+    std::stack <
+        std::stack < std::shared_ptr<Value> >
+    > stacks;
+    
+    std::stack < std::string > callstack;
+    std::stack < int > to_return;
+    static constexpr int ALL = -1;
+
+    bool running = true;
+    bool stop = false;
+
+    std::vector< std::shared_ptr<Value> > rets;
+
+    Executioner(
+        Interpreter *g,
+        std::shared_ptr<LuaValue::Function> entry,
+        std::vector< std::shared_ptr<Value> > args
+    );
+
+    void execute();
+
+    Instruction* fetch_instruction();
+
+    void execute(Instruction* inst);
+
+private:
+    bool is_barrier(const std::stack< std::shared_ptr<Value> > st) const;
+
+    std::shared_ptr< Value > pop_top();
+
+    std::shared_ptr< LuaValue::Boolean > to_bool(std::shared_ptr< Value > value);
+
+    std::shared_ptr< LuaValue::Number > to_num(std::shared_ptr< Value > value);
+
+    bool are_equal(std::shared_ptr<Value> arg1, std::shared_ptr<Value> arg2);
+
+    void NOP(Instruction *inst);
+
+    void PUT_SCOPE(Instruction *inst);
+    
+    void POP_SCOPE(Instruction *inst);
+
+    void PUT_STACK(Instruction *inst);
+
+    void POP_STACK(Instruction *inst);
+
+    void CLEAR_STACK(Instruction *inst);
+    
+    void MOVE_STACK(Instruction *inst);
+    
+    void LOAD(Instruction *inst);
+
+    void STORE(Instruction *inst);
+    
+    void SET_LOCAL(Instruction *inst);
+
+    void SET_GLOBAL(Instruction *inst);
+
+    void SET_ATTR(Instruction *inst);
+    
+    void GLOBATTR(Instruction *inst);
+    
+    void INDEX(Instruction *inst);
+
+    void DYN_INDEX(Instruction *inst);
+
+    void METAINDEX(Instruction *inst);
+    void METAASSIGN_WHAT_WHOM(Instruction *inst);
+
+    void ASSIGN_WHAT_WHOM(Instruction *inst);
+    void ASSIGN_WHOM_WHAT(Instruction *inst);
+
+    void ASSIGN_WHAT_WHOM_WHERE(Instruction *inst);
+
+    void ASSIGN_WHOM_WHERE_WHAT(Instruction *inst);
+
+    void BRANCH(Instruction *inst);
+
+    void GOTO(Instruction *inst);
+    void LABEL(Instruction *inst);
+
+    void raw_call(
+        std::shared_ptr<LuaValue::Function> func,
+        std::vector< std::shared_ptr<Value> > & reversed_args,
+        int return_size
+    );
+
+    void CALL(Instruction *inst);
+
+    void REV_CALL(Instruction *inst);
+
+    void RET(Instruction *inst);
+
+    void PUT_NIL(Instruction *inst);
+
+    void PUT_TRUE(Instruction *inst);
+    
+    void PUT_FALSE(Instruction *inst);
+
+    void PUT_STR(Instruction *inst);
+
+    void PUT_NUM(Instruction *inst);
+
+    void PUT_TABLE(Instruction *inst);
+
+    void PUT_FUNC(Instruction *inst);
+
+    void PUT_BARRIER(Instruction *inst);
+
+    void POP_BARRIER(Instruction *inst);
+
+    void DISCARD(Instruction *inst);
+    
+    void DUP(Instruction *inst);
+
+    void LE(Instruction *inst);
+
+    void LT(Instruction *inst);
+
+    void GE(Instruction *inst);
+    void GT(Instruction *inst);
+
+    void EQ(Instruction *inst);
+    void NEQ(Instruction *inst);
+
+    void CONCAT(Instruction *inst);
+
+    void ADD(Instruction *inst);
+
+    void SUB(Instruction *inst);
+
+    void MUL(Instruction *inst);
+
+    void MOD(Instruction *inst);
+
+    void DIV(Instruction *inst);
+
+    void TRUEDIV(Instruction *inst);
+
+    void SHLEFT(Instruction *inst);
+    void SHRIGHT(Instruction *inst);
+
+    void AND(Instruction *inst);
+
+    void OR(Instruction *inst);
+    
+    void BITAND(Instruction *inst);
+    void BITOR(Instruction *inst);
+    void BITXOR(Instruction *inst);
+    void POW(Instruction *inst);
+
+    void HASH(Instruction *inst);
+    
+    void NEG(Instruction *inst);
+    
+    void NOT(Instruction *inst);
+
+    void BITNOT(Instruction *inst);
+};
+
+
+
+
+}
+
+#endif // INTERPRETER_CORE_H

@@ -11,5 +11,5 @@ z = x + y
 x, y = y, x  -- обмен значениями
 
 -- Переменные с nil
-local empty<const>
+local empty
 local first, second, third = 1, 2

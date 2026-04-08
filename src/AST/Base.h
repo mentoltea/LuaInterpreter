@@ -12,14 +12,10 @@
 namespace LuaAST {
 
 struct Node {
-    virtual ~Node() = default;
-    virtual void print(std::ostream &os, int tabs = 0) const {};
+    virtual ~Node();
+    virtual void print(std::ostream &os, int tabs = 0) const;
 
-    static void insert_tabs(std::ostream &os, int tabs) {
-        for (int t=0; t<tabs; t++) {
-            os << "\t";
-        }
-    }
+    static void insert_tabs(std::ostream &os, int tabs);
 };
 
 struct Block;
@@ -77,7 +73,7 @@ struct Statement: public Node {
     Statement* prev;
     Statement* next;
 
-    Statement(): parent(nullptr), prev(nullptr), next(nullptr) {}
+    Statement();
     virtual Type type() const = 0;
 };
 
@@ -90,15 +86,9 @@ struct Block: public Node {
 
     Statement* parent;
     
-    Block(): parent(nullptr) {}
+    Block();
   
-    virtual void print(std::ostream &os, int tabs = 0) const {
-        for (auto &st: statements) {
-            insert_tabs(os, tabs);
-            st->print(os, tabs);
-            os << std::endl;
-        }
-    };
+    virtual void print(std::ostream &os, int tabs = 0) const;
 };
 }
 
