@@ -10,6 +10,9 @@
 #include <stack>
 #include <algorithm>
 
+// libs
+#include "libs/io/io.h"
+
 namespace LuaInterpreter {
 
 struct Scope {
@@ -78,6 +81,12 @@ public:
 
     void execute(Instruction* inst);
 
+
+    static std::string type_of(std::shared_ptr< Value > value);
+
+    // Others: switch value->type()
+    // Userdata: metatable[ "__type" ] = type
+    static bool is_type_of(std::shared_ptr< Value > value, const std::string& type);
 private:
     bool is_barrier(const std::stack< std::shared_ptr<Value> > st) const;
 
@@ -86,6 +95,8 @@ private:
     std::shared_ptr< LuaValue::Boolean > to_bool(std::shared_ptr< Value > value);
 
     std::shared_ptr< LuaValue::Number > to_num(std::shared_ptr< Value > value);
+    std::shared_ptr< LuaValue::Number > to_int(std::shared_ptr< Value > value);
+    std::shared_ptr< LuaValue::Number > to_float(std::shared_ptr< Value > value);
 
     bool are_equal(std::shared_ptr<Value> arg1, std::shared_ptr<Value> arg2);
 
@@ -216,6 +227,6 @@ private:
 
 
 
-}
+} // LuaInterpreter
 
 #endif // INTERPRETER_CORE_H

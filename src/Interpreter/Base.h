@@ -38,6 +38,7 @@ public:
         USERDATA,
         TABLE,
     };
+    virtual ~Value() = default;
     virtual Type type() const = 0;
 };
 
@@ -45,8 +46,10 @@ class Executioner;
 
 typedef std::vector< std::shared_ptr<Value> > (*cxx_func) (
     Executioner* exec,
-    std::vector< std::shared_ptr<Value> > args
+    std::vector< std::shared_ptr<Value> > &args
 );
+
+class Interpreter;
 
 } // LuaInterpreter
 

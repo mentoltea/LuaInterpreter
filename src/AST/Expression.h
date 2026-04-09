@@ -121,17 +121,17 @@ struct VarPart: public Node {
         NAME,
         EXP
     } kind;
-    virtual void print(std::ostream &os, int tabs, bool first) const = 0;
+    virtual void print_other(std::ostream &os, int tabs, bool first) const = 0;
 };
 struct VarPartName: public VarPart {
     std::string name;
     VarPartName(std::string name);
-    void print(std::ostream &os, int tabs, bool first) const;
+    void print_other(std::ostream &os, int tabs, bool first) const;
 };
 struct VarPartExp: public VarPart {
     std::shared_ptr<Expression> exp;
     VarPartExp(std::shared_ptr<Expression> exp);
-    void print(std::ostream &os, int tabs, bool first) const;
+    void print_other(std::ostream &os, int tabs, bool first) const;
 };
 
 struct Var: public Expression {

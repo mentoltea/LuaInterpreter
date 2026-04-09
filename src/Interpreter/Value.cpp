@@ -3,18 +3,19 @@
 using namespace LuaInterpreter;
 using namespace LuaValue;
 
+Barrier::~Barrier() = default;
 Value::Type Barrier::type() const { return Type::BARRIER; };
 
-
+Nil::~Nil() = default;
 Value::Type Nil::type() const { return Type::NIL; };
 
-
+Boolean::~Boolean() = default;
 Value::Type Boolean::type() const { return Type::BOOLEAN; };
 
 Boolean::Boolean(): value(false) {}
 Boolean::Boolean(bool value): value(value) {}
 
-
+Number::~Number() = default;
 Value::Type Number::type() const { return Type::NUMBER; };
 
 Number::Number(): kind(Kind::INT), integer(0) {}
@@ -163,7 +164,7 @@ bool Number::operator!=(const Number& other) {
     return !(*this == other);
 }
 
-
+String::~String() = default;
 Value::Type String::type() const { return Type::STRING; };
 
 String::String() {}
@@ -171,7 +172,7 @@ String::String(const std::string& str): value(str) {}
 
 
 
-
+Function::~Function() = default;
 Value::Type Function::type() const { return Type::FUNCTION; };
 
 Function::Function(const std::string& label, size_t arg_N, const std::string& varg) {
@@ -181,10 +182,8 @@ Function::Function(const std::string& label, size_t arg_N, const std::string& va
     this->varg = varg;
 }
 
-Function::Function(cxx_func func, size_t arg_N, const std::string& varg) {
+Function::Function(cxx_func func) {
     this->func = func;
-    this->arg_N = arg_N;
-    this->varg = varg;
 }
 
 std::string Function::key() const {
@@ -194,15 +193,40 @@ std::string Function::key() const {
 
 
 
-
+Thread::~Thread() = default;
 Value::Type Thread::type() const { return Type::THREAD; };
 
 
+Userdata::~Userdata() = default;
+Userdata::Userdata() {
+    set_type("Userdata");
+}
+Userdata::Userdata(const std::string& strtype) {
+    set_type(strtype);
+}
 
 Value::Type Userdata::type() const { return Type::USERDATA; };
 
+void Userdata::set_type(const std::string& strtype) {
+    meta.set("__type",  std::make_shared<LuaValue::String>( strtype ));
+}
+
+void Userdata::ensure_type(const std::string& strtype) {
+    auto obj = meta.at("__type");
+    if (!obj) {
+        throw std::runtime_error("Userdata::ensure_type - no \"__type\" metafield");
+    }
+    if (obj->type() != Value::Type::STRING) {
+        throw std::runtime_error("Userdata::ensure_type - unexpected \"__type\" type :" + std::to_string((int)obj->type()));
+    }
+    auto str = std::static_pointer_cast<LuaValue::String>(obj);
+    if (str->value != strtype) {
+        throw std::runtime_error("Userdata::ensure_type - unexpected \"__type\" value :" + str->value);
+    }
+}
 
 
+Table::~Table() = default;
 Value::Type Table::type() const { return Type::TABLE; };
 
 std::shared_ptr<Value> Table::at(const Value &key) {

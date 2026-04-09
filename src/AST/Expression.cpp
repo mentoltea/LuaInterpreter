@@ -121,14 +121,14 @@ void Operation::print(std::ostream &os, int tabs) const {
 
 
 VarPartName::VarPartName(std::string name): name(name) {}
-void VarPartName::print(std::ostream &os, int tabs, bool first) const {
+void VarPartName::print_other(std::ostream &os, int tabs, bool first) const {
     if (!first) os << ".";
     os << name;
 }
 
 
 VarPartExp::VarPartExp(std::shared_ptr<Expression> exp): exp(exp) {}
-void VarPartExp::print(std::ostream &os, int tabs, bool first) const {
+void VarPartExp::print_other(std::ostream &os, int tabs, bool first) const {
     if (first) os << "(";
     else os << "[";
     
@@ -141,9 +141,9 @@ void VarPartExp::print(std::ostream &os, int tabs, bool first) const {
 
 Type Var::type() const { return Type::VAR; }
 void Var::print(std::ostream &os, int tabs) const {
-    base->print(os, tabs, true);
+    base->print_other(os, tabs, true);
     for (auto &spec: specifications) {
-        spec->print(os, tabs, false);
+        spec->print_other(os, tabs, false);
     }
 }
 

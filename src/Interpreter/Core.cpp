@@ -38,6 +38,7 @@ Interpreter::Interpreter(
 ) {
     this->program = program;
     collect_labels();
+    LuaLibs::IO::include(this);
 
     auto entry = std::make_shared<LuaValue::Function>("_start", 0, "varg");
     workers.push_back(
@@ -121,6 +122,7 @@ Instruction* Executioner::fetch_instruction() {
 }
 
 void Executioner::execute(Instruction* inst) {
+    // std::cout << *inst << std::endl;
     switch (inst->type) {
         case Instruction::Type::NOP: {
             NOP(inst);
@@ -318,6 +320,47 @@ void Executioner::execute(Instruction* inst) {
     }
 }
 
+std::string Executioner::type_of(std::shared_ptr< Value > value) {
+    switch (value->type()) {
+        case Value::Type::BARRIER: {
+            throw std::runtime_error("KYS 2");
+        } break;
+
+        case Value::Type::NIL: {
+            return "Nil";
+        } break;
+        case Value::Type::BOOLEAN: {
+            return "Boolean";
+        } break;
+        case Value::Type::NUMBER: {
+            return "Number";
+        } break;
+        case Value::Type::STRING: {
+            return "String";
+        } break;
+        case Value::Type::FUNCTION: {
+            return "Function";
+        } break;
+        case Value::Type::THREAD: {
+            return "Thread";
+        } break;
+        case Value::Type::USERDATA: {
+            auto ud = std::static_pointer_cast<LuaValue::Userdata>(value);
+            auto typestr = ud->meta.at("__type");
+            if (!typestr || typestr->type() != Value::Type::STRING) return "Userdata";
+            return std::static_pointer_cast<LuaValue::String>(typestr)->value;
+        } break;
+        case Value::Type::TABLE: {
+            return "Table";
+        } break;
+    }
+    throw std::runtime_error("KYS 3");
+}
+
+bool Executioner::is_type_of(std::shared_ptr< Value > value, const std::string& type) {
+    return type_of(value) == type;
+}
+
 bool Executioner::is_barrier(const std::stack< std::shared_ptr<Value> > st) const {
     return st.top()->type() == Value::Type::BARRIER;
 }    
@@ -485,7 +528,9 @@ void Executioner::MOVE_STACK(Instruction *inst) {
 }
 
 void Executioner::LOAD(Instruction *inst) {
-    stacks.top().push( get(inst->name) );
+    auto v = get(inst->name);
+    if (v) stacks.top().push( v );
+    else stacks.top().push( std::make_shared<LuaValue::Nil>() );
 }
 
 void Executioner::STORE(Instruction *inst) {
@@ -516,9 +561,9 @@ void Executioner::INDEX(Instruction *inst) {
     if (value->type() != Value::Type::TABLE) {
         throw std::runtime_error("Interpretator: Indexing of non-table type");
     }
-    stacks.top().push(
-        ((LuaValue::Table*) value.get())->at(inst->field)
-    );
+    auto v = ((LuaValue::Table*) value.get())->at(inst->field);
+    if (v) stacks.top().push(v);
+    else stacks.top().push( std::make_shared<LuaValue::Nil>() );
 }
 
 void Executioner::DYN_INDEX(Instruction *inst) {
@@ -529,9 +574,9 @@ void Executioner::DYN_INDEX(Instruction *inst) {
         throw std::runtime_error("Interpretator: Indexing of non-table type");
     }
 
-    stacks.top().push(
-        ((LuaValue::Table*) table.get())->at(*exp)
-    );
+    auto v = ((LuaValue::Table*) table.get())->at(*exp);
+    if (v) stacks.top().push(v);
+    else stacks.top().push( std::make_shared<LuaValue::Nil>() );
 }
 
 void Executioner::METAINDEX(Instruction *inst) {
@@ -545,13 +590,13 @@ void Executioner::METAINDEX(Instruction *inst) {
     }
 
     if (type == Value::Type::TABLE) {
-        stacks.top().push(
-            ((LuaValue::Table*) object.get())->meta.at(inst->metafield)
-        );
+        auto v = ((LuaValue::Table*) object.get())->meta.at(inst->metafield);
+        if (v) stacks.top().push(v);
+        else stacks.top().push( std::make_shared<LuaValue::Nil>() );
     } else {
-        stacks.top().push(
-            ((LuaValue::Userdata*) object.get())->meta.at(inst->metafield)
-        );
+        auto v = ((LuaValue::Userdata*) object.get())->meta.at(inst->metafield);
+        if (v) stacks.top().push(v);
+        else stacks.top().push( std::make_shared<LuaValue::Nil>() );
     }
 
     stacks.top().push(object);
@@ -699,7 +744,7 @@ void Executioner::raw_call(
             for (int i=0; i<diff; i++) {
                 // argsize - N - i
                 int idx = diff - i;
-                varg->set(0, reversed_args[idx]);
+                varg->set(idx, reversed_args[idx]);
             }
         }
         scopes.top().back().set(func->varg, varg);
@@ -714,14 +759,14 @@ void Executioner::CALL(Instruction *inst) {
     if (type == Value::Type::FUNCTION)  function = std::static_pointer_cast<LuaValue::Function>(func_arg);
     else if (type == Value::Type::TABLE) {
         auto res = ((LuaValue::Table*) func_arg.get())->meta.at("__call");
-        if (res->type() != Value::Type::FUNCTION) {
+        if (!res || res->type() != Value::Type::FUNCTION) {
             throw std::runtime_error("Interpreter: Cannot call non-callable object");
         }
         function = std::static_pointer_cast<LuaValue::Function>(res);
     }
     else if (type == Value::Type::USERDATA) {
         auto res = ((LuaValue::Userdata*) func_arg.get())->meta.at("__call");
-        if (res->type() != Value::Type::FUNCTION) {
+        if (!res || res->type() != Value::Type::FUNCTION) {
             throw std::runtime_error("Interpreter: Cannot call non-callable object");
         }
         function = std::static_pointer_cast<LuaValue::Function>(res);
@@ -733,7 +778,7 @@ void Executioner::CALL(Instruction *inst) {
     auto &top = stacks.top();
 
     // Arg_N ... Arg_1
-    std::vector< std::shared_ptr<Value> > values(top.size());
+    std::vector< std::shared_ptr<Value> > values;
     if (inst->whole_stack) {
         while (!top.empty()) {
             if (!is_barrier(top)) {
@@ -759,7 +804,7 @@ void Executioner::REV_CALL(Instruction *inst) {
     auto &top = stacks.top();
 
     // Arg_N ... Arg_1 func
-    std::vector< std::shared_ptr<Value> > values(top.size());
+    std::vector< std::shared_ptr<Value> > values;
     if (inst->whole_stack) {
         while (!top.empty()) {
             if (!is_barrier(top)) {
@@ -785,14 +830,14 @@ void Executioner::REV_CALL(Instruction *inst) {
     if (type == Value::Type::FUNCTION)  function = std::static_pointer_cast<LuaValue::Function>(func_arg);
     else if (type == Value::Type::TABLE) {
         auto res = ((LuaValue::Table*) func_arg.get())->meta.at("__call");
-        if (res->type() != Value::Type::FUNCTION) {
+        if (!res || res->type() != Value::Type::FUNCTION) {
             throw std::runtime_error("Interpreter: Cannot call non-callable object");
         }
         function = std::static_pointer_cast<LuaValue::Function>(res);
     }
     else if (type == Value::Type::USERDATA) {
         auto res = ((LuaValue::Userdata*) func_arg.get())->meta.at("__call");
-        if (res->type() != Value::Type::FUNCTION) {
+        if (!res || res->type() != Value::Type::FUNCTION) {
             throw std::runtime_error("Interpreter: Cannot call non-callable object");
         }
         function = std::static_pointer_cast<LuaValue::Function>(res);
@@ -870,7 +915,7 @@ void Executioner::PUT_FALSE(Instruction *inst) {
 
 void Executioner::PUT_STR(Instruction *inst) {
     stacks.top().push(
-        std::shared_ptr<Value>( new LuaValue::String(inst->str) )
+        std::make_shared<LuaValue::String>(inst->str)
     );
 }
 

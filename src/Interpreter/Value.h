@@ -9,15 +9,20 @@ namespace LuaInterpreter {
 namespace LuaValue {
 
 class Barrier: public Value {
+public:
+    ~Barrier();
     virtual Type type() const override;
 };
 
 class Nil: public Value {
+public:
+    ~Nil();
     virtual Type type() const override;
 };
 
 class Boolean: public Value {
 public:
+    ~Boolean();
     virtual Type type() const override;
     
     bool value;
@@ -27,6 +32,7 @@ public:
 
 class Number: public Value {
 public:
+    ~Number();
     virtual Type type() const override;
 
     enum class Kind {
@@ -63,6 +69,7 @@ public:
 
 class String: public Value {
 public:
+    ~String();
     virtual Type type() const override;
 
     String();
@@ -72,12 +79,13 @@ public:
 
 class Function: public Value {
 public:
+    ~Function();
     virtual Type type() const override;
     // std::shared_ptr<LuaAST::FuncBody> body;  
 
     Function(const std::string& label, size_t arg_N, const std::string& varg);
 
-    Function(cxx_func func, size_t arg_N, const std::string& varg);
+    Function(cxx_func func);
 
     cxx_func func;
     std::string label;
@@ -89,18 +97,27 @@ public:
 
 class Thread: public Value {
 public:
+    ~Thread();
     virtual Type type() const override;
 };
 
 class Userdata: public Value {
 public:
+    ~Userdata();
     virtual Type type() const override;
     Metatable meta;
     void* data;
+
+    Userdata();
+    Userdata(const std::string& strtype);
+
+    void set_type(const std::string& strtype);
+    void ensure_type(const std::string& strtype);
 };
 
 class Table: public Value {
 public:
+    ~Table();
     virtual Type type() const override;
     Metatable meta;
 private:
