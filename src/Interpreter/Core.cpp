@@ -51,17 +51,17 @@ Interpreter::Interpreter(
 }
 
 bool Interpreter::run() {
-    bool EOS = false;
-    while (!EOS) { 
-        EOS = true;
+    bool end = false;
+    while (!end) { 
+        end = true;
         for (auto &w: workers) {
             if (w->running) {
-                EOS = false;
+                end = false;
                 w->execute();
                 break;
             }
         }
-        if (!EOS) break;
+        if (end) break;
     }
     return true;
 }
@@ -122,7 +122,9 @@ Instruction* Executioner::fetch_instruction() {
 }
 
 void Executioner::execute(Instruction* inst) {
-    // std::cout << *inst << std::endl;
+    #ifdef INTERPRETER_DEBUG
+    std::cout << std::endl << *inst << std::endl;
+    #endif
     switch (inst->type) {
         case Instruction::Type::NOP: {
             NOP(inst);
@@ -318,12 +320,38 @@ void Executioner::execute(Instruction* inst) {
         throw std::runtime_error("Unknown instruction type: " + std::to_string((int)inst->type));
     }
     }
+
+    #ifdef INTERPRETER_DEBUG
+    if (!stacks.empty()) {
+        auto topstack = stacks.top();
+        if (topstack.empty()) std::cout << "empty" << std::endl;
+        while (!topstack.empty()) {
+            auto v = topstack.top();
+            std::cout << v << " " << type_of(v);
+            if (v->type() == Value::Type::BOOLEAN) {
+                std::cout << " " << std::static_pointer_cast<LuaValue::Boolean>(v)->value;
+            } else
+            if (v->type() == Value::Type::NUMBER) {
+                auto num = std::static_pointer_cast<LuaValue::Number>(v);
+                if (num->kind == LuaValue::Number::Kind::INT) std::cout << " " << num->integer;
+                else std::cout << " " << num->floating;
+            }
+            std::cout << std::endl;
+            topstack.pop();
+        }
+    }
+    #endif
+    
 }
 
 std::string Executioner::type_of(std::shared_ptr< Value > value) {
     switch (value->type()) {
         case Value::Type::BARRIER: {
+            #ifdef INTERPRETER_DEBUG
+            return "Barrier";
+            #else 
             throw std::runtime_error("KYS 2");
+            #endif
         } break;
 
         case Value::Type::NIL: {
@@ -367,6 +395,7 @@ bool Executioner::is_barrier(const std::stack< std::shared_ptr<Value> > st) cons
 
 std::shared_ptr< Value > Executioner::pop_top() {
     auto &top_stack = stacks.top();
+
     auto top_elem = top_stack.top();
 
     if (top_elem->type() != Value::Type::BARRIER) {
@@ -378,16 +407,13 @@ std::shared_ptr< Value > Executioner::pop_top() {
 }
 
 std::shared_ptr< LuaValue::Boolean > Executioner::to_bool(std::shared_ptr< Value > value) {
-    if (
-        value->type() == Value::Type::NIL ||
-        (
-            value->type() == Value::Type::BOOLEAN && 
-            !std::static_pointer_cast<LuaValue::Boolean>(value)->value
-        ) 
-    ) {
-        return std::shared_ptr<LuaValue::Boolean>(new LuaValue::Boolean(false));
+    if (value->type() == Value::Type::NIL) {
+        return std::make_shared<LuaValue::Boolean>(false);
     }
-    return std::shared_ptr<LuaValue::Boolean>(new LuaValue::Boolean(true));
+    if (value->type() == Value::Type::BOOLEAN)  {
+        return std::make_shared<LuaValue::Boolean>(std::static_pointer_cast<LuaValue::Boolean>(value)->value);
+    }
+    return std::make_shared<LuaValue::Boolean>(true);
 }
 
 std::shared_ptr< LuaValue::Number > Executioner::to_num(std::shared_ptr< Value > value) {
@@ -498,7 +524,7 @@ void Executioner::MOVE_STACK(Instruction *inst) {
     stacks.pop();
 
     // N ... 0
-    std::vector< std::shared_ptr<Value> > values(top.size());
+    std::vector< std::shared_ptr<Value> > values;
     if (inst->whole_stack) {
         while (!top.empty()) {
             if (!is_barrier(top)) {
@@ -696,6 +722,15 @@ void Executioner::raw_call(
     std::vector< std::shared_ptr<Value> > & reversed_args,
     int return_size
 ) {
+    #ifdef INTERPRETER_DEBUG
+    std::cout << "[" << std::endl;
+    std::cout << "raw_call" << std::endl;
+    for (auto it = reversed_args.rbegin(); it != reversed_args.rend(); it++) {
+        std::cout << *it << " " << type_of(*it) << std::endl;
+    }
+    std::cout << "]" << std::endl;
+    #endif
+
     if (func->func) {
         // built-in function
         std::reverse(reversed_args.begin(), reversed_args.end());
@@ -719,7 +754,7 @@ void Executioner::raw_call(
     } else {
         callstack.push(func->label);
         to_return.push(return_size);
-        stacks.push({});
+        // stacks.push({});
         scopes.push( { Scope{} } );
         ret_addr.push(ip);
         ip = g->labels[func->label];
@@ -858,13 +893,22 @@ void Executioner::RET(Instruction *inst) {
     
 
     // v_n ... v_1
-    std::vector< std::shared_ptr<Value> > values(top.size());
+    std::vector< std::shared_ptr<Value> > values;
     
-    while (!top.empty()) {
-        if (!is_barrier(top)) {
-            values.push_back(top.top());
-        }  
-        top.pop();
+    if (inst->whole_stack) {
+        while (!top.empty()) {
+            if (!is_barrier(top)) {
+                values.push_back(top.top());
+            }  
+            top.pop();
+        }
+    } else {
+        for (size_t i=0; i<inst->N; i++) {
+            if (!is_barrier(top)) {
+                values.push_back(top.top());
+            } 
+            top.pop();
+        }
     }
 
     // v_1 ... v_n
@@ -977,7 +1021,7 @@ void Executioner::LE(Instruction *inst) {
     }
 
     stacks.top().push(
-        std::shared_ptr<Value> ( new LuaValue::Boolean(num1 <= num2) )
+        std::shared_ptr<Value> ( new LuaValue::Boolean(*num1 <= *num2) )
     );
 } 
 
@@ -993,7 +1037,7 @@ void Executioner::LT(Instruction *inst) {
     }
 
     stacks.top().push(
-        std::shared_ptr<Value> ( new LuaValue::Boolean(num1 < num2) )
+        std::shared_ptr<Value> ( new LuaValue::Boolean(*num1 < *num2) )
     );
 }
 
@@ -1009,7 +1053,7 @@ void Executioner::GE(Instruction *inst) {
     }
 
     stacks.top().push(
-        std::shared_ptr<Value> ( new LuaValue::Boolean(num1 >= num2) )
+        std::shared_ptr<Value> ( new LuaValue::Boolean(*num1 >= *num2) )
     );
 } 
 void Executioner::GT(Instruction *inst) {
@@ -1024,7 +1068,7 @@ void Executioner::GT(Instruction *inst) {
     }
 
     stacks.top().push(
-        std::shared_ptr<Value> ( new LuaValue::Boolean(num1 > num2) )
+        std::shared_ptr<Value> ( new LuaValue::Boolean(*num1 > *num2) )
     );
 }
 
@@ -1205,6 +1249,10 @@ void Executioner::NEG(Instruction *inst) {
 
     auto n1 = to_num(arg1);
 
+    if (!n1) {
+        throw std::runtime_error("Interpreter: Arbitary negation is not supported yet");
+    }
+
     if (n1->kind == LuaValue::Number::Kind::INT) {
         stacks.top().push(
             std::make_shared<LuaValue::Number>(-n1->integer)
@@ -1220,6 +1268,7 @@ void Executioner::NOT(Instruction *inst) {
     auto arg1 = pop_top();
 
     auto b1 = to_bool(arg1);
+    b1->value = !b1->value;
 
     stacks.top().push(b1);
 }

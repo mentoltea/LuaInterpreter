@@ -241,9 +241,9 @@ std::vector< std::shared_ptr<Value> > IO::File::write (
             throw std::runtime_error("IO::File::write - cannot write object of type " + std::to_string((int)type));
         }
 
-        if (i != N-1) {
-            data += " ";
-        }
+        // if (i != N-1) {
+        //     data += " ";
+        // }
 
         bytes += buffer->sputn(data.data(), data.size());
     }

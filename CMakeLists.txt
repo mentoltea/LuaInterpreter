@@ -91,6 +91,7 @@ target_compile_options(
     -Wno-missing-field-initializers
     -Wno-unused-parameter
     -ggdb -O0
+    # -DINTERPRETER_DEBUG
 )
 
 message(STATUS "ANTLR4 include dir: ${ANTLR4_INCLUDE_DIR}")

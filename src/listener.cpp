@@ -757,6 +757,41 @@ void Lua55Listener::exitPowExp(Lua55GrammarParser::PowExpContext * ctx){
     }
 }
 
+std::string unescapeString(const std::string& input) {
+    static const std::unordered_map<char, char> escapeChars = {
+        {'n', '\n'},
+        {'t', '\t'},
+        {'r', '\r'},
+        {'e', '\e'},
+        {'\\', '\\'},
+        {'\'', '\''},
+        {'\"', '\"'},
+        {'0', '\0'}
+    };
+    
+    std::string result;
+    result.reserve(input.size());
+    
+    for (size_t i = 0; i < input.size(); ++i) {
+        if (input[i] == '\\' && i + 1 < input.size()) {
+            char next = input[i + 1];
+            auto it = escapeChars.find(next);
+            if (it != escapeChars.end()) {
+                result.push_back(it->second);
+                ++i;
+            } else {
+                result.push_back(input[i]);
+                result.push_back(next);
+                ++i;
+            }
+        } else {
+            result.push_back(input[i]);
+        }
+    }
+    
+    return result;
+}
+
 void Lua55Listener::exitLiteral(Lua55GrammarParser::LiteralContext * ctx){
     // std::cout << "Lua55Listener::exitLiteral" << std::endl; 
     Literal* lit = new Literal;
@@ -776,7 +811,9 @@ void Lua55Listener::exitLiteral(Lua55GrammarParser::LiteralContext * ctx){
 
     if (ctx->STRING()) {
         lit->kind = Literal::Kind::STRING;
-        lit->value = ctx->STRING()->toString();
+        std::string strlit = ctx->STRING()->toString();
+        strlit = unescapeString(strlit.substr(1, strlit.size()-2));
+        lit->value = strlit;
     } else
 
     if (ctx->NUMBER()) {

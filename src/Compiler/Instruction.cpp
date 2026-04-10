@@ -77,7 +77,7 @@ std::ostream& operator<<(std::ostream& os, Instruction& inst) {
         case Instruction::Type::PUT_NIL:    { os << "PUT_NIL" ; } break;
         case Instruction::Type::PUT_TRUE:   { os << "PUT_TRUE" ; } break;
         case Instruction::Type::PUT_FALSE:  { os << "PUT_FALSE" ; } break;
-        case Instruction::Type::PUT_STR:    { os << "PUT_STR " << inst.str ; } break;
+        case Instruction::Type::PUT_STR:    { os << "PUT_STR" ; } break;
         case Instruction::Type::PUT_NUM:    { 
             os << "PUT_NUM ";
             if (std::holds_alternative<int64_t> (inst.num)) os << std::get<int64_t>(inst.num); 
