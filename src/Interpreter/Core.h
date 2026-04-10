@@ -12,6 +12,7 @@
 
 // libs
 #include "libs/io/io.h"
+#include "libs/iterators/iterators.h"
 
 namespace LuaInterpreter {
 

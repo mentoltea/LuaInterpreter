@@ -173,12 +173,12 @@ namelist: name (',' name)* ;
 
 args: '(' explist? ')' ;
 
-fieldlist: field (FIELD_SEP field)* FIELD_SEP? ;
-FIELD_SEP: ',' | ';' ;
+fieldlist: field (field_sep field)* field_sep? ;
+field_sep: ',' | ';' ;
 field:
-    '[' exp ']' '=' exp
-    | name '=' exp
-    | exp
+    exp
+    | name EQ_SIGN exp
+    | '[' exp ']' EQ_SIGN exp
 ;
 
 unop: NOT | HASH_SIGN | MINUS_SIGN | TILDA_SIGN ; 

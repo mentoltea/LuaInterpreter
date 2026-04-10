@@ -158,7 +158,7 @@ void StaticAnalyzer::ensure_no_gotos_in_expr(std::shared_ptr<LuaAST::Expression>
                             stack.push(field->rhs);
                         } break;
                         case LuaAST::Field::Kind::SINGLE : {
-                            stack.push(field->lhs);
+                            stack.push(field->rhs);
                         } break;
                         
                         default:

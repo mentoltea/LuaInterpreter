@@ -184,7 +184,8 @@ void Gen_forSt::print(std::ostream &os, int tabs) const {
     os << "for ";
     for (auto &var: vars) {
         os << var;
-        if (var != vars.back()) os << ", ";
+        if (var != vars.back()) os << ",";
+        os << " ";
     }
     os << "in ";
     exp->print(os, tabs);

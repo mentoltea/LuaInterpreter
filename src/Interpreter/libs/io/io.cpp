@@ -22,9 +22,11 @@ void IO::include(Interpreter* interp) {
 // non-owning (cout, cin, cerr)
 IO::File::File(std::istream &os): Userdata(typestr), buffer(os.rdbuf()) {
     prepare_metatable();
+    this->data = buffer;
 }
 IO::File::File(std::ostream &os): Userdata(typestr), buffer(os.rdbuf()) {
     prepare_metatable();
+    this->data = buffer;
 }
 
 // owning (files)
@@ -33,6 +35,7 @@ IO::File::File(const std::string& filepath, std::ios::openmode mode): Userdata(t
     file->open(filepath, mode);
     buffer = file.get(); 
     prepare_metatable();
+    this->data = buffer;
 }
 
 IO::File::File(std::shared_ptr< std::filebuf > file) {

@@ -229,18 +229,106 @@ void Userdata::ensure_type(const std::string& strtype) {
 Table::~Table() = default;
 Value::Type Table::type() const { return Type::TABLE; };
 
-std::shared_ptr<Value> Table::at(const Value &key) {
-    throw std::runtime_error("Table::at(const Value &key)");
+std::shared_ptr<Value> Table::at(std::shared_ptr<Value> key) {
+    switch (key->type()) {
+        case Value::Type::BARRIER: {
+            throw std::runtime_error("Table::at KYS 1");
+        } break;
+
+        case Value::Type::NIL: {
+            throw std::runtime_error("Cannot index table with nil");
+        } break;
+
+        case Value::Type::BOOLEAN: {
+            auto bl = std::static_pointer_cast<LuaValue::Boolean>(key);
+            return at((size_t) bl->value);
+        } break;
+
+        case Value::Type::NUMBER: {
+            auto nm = std::static_pointer_cast<LuaValue::Number>(key);
+            return at(*nm);
+        } break;
+
+        case Value::Type::STRING: {
+            auto str = std::static_pointer_cast<LuaValue::String>(key);
+            return at(*str);
+        } break;
+
+        case Value::Type::FUNCTION: {
+            auto fn = std::static_pointer_cast<LuaValue::Function>(key);
+            return at(*fn);
+        } break;
+
+        case Value::Type::THREAD: {
+            auto th = std::static_pointer_cast<LuaValue::Thread>(key);
+            return at(*th);
+        } break;
+
+        case Value::Type::USERDATA: {
+            auto ud = std::static_pointer_cast<LuaValue::Userdata>(key);
+            return at(*ud);
+        } break;
+
+        case Value::Type::TABLE: {
+            auto tb = std::static_pointer_cast<LuaValue::Table>(key);
+            return at(*tb);
+        } break;
+    }
+    throw std::runtime_error("Table::at KYS 2");
 }
-void Table::set(const Value &key, std::shared_ptr<Value> value) {
-    throw std::runtime_error("Table::set(const Value &key, std::shared_ptr<Value> value)");
+void Table::set(std::shared_ptr<Value> key, std::shared_ptr<Value> value) {
+    switch (key->type()) {
+        case Value::Type::BARRIER: {
+            throw std::runtime_error("Table::set KYS 1");
+        } break;
+
+        case Value::Type::NIL: {
+            throw std::runtime_error("Cannot index table with nil");
+        } break;
+
+        case Value::Type::BOOLEAN: {
+            auto bl = std::static_pointer_cast<LuaValue::Boolean>(key);
+            return set((size_t) bl->value, value);
+        } break;
+
+        case Value::Type::NUMBER: {
+            auto nm = std::static_pointer_cast<LuaValue::Number>(key);
+            return set(*nm, value);
+        } break;
+
+        case Value::Type::STRING: {
+            auto str = std::static_pointer_cast<LuaValue::String>(key);
+            return set(*str, value);
+        } break;
+
+        case Value::Type::FUNCTION: {
+            auto fn = std::static_pointer_cast<LuaValue::Function>(key);
+            return set(*fn, value);
+        } break;
+
+        case Value::Type::THREAD: {
+            auto th = std::static_pointer_cast<LuaValue::Thread>(key);
+            return set(*th, value);
+        } break;
+
+        case Value::Type::USERDATA: {
+            auto ud = std::static_pointer_cast<LuaValue::Userdata>(key);
+            return set(*ud, value);
+        } break;
+
+        case Value::Type::TABLE: {
+            auto tb = std::static_pointer_cast<LuaValue::Table>(key);
+            return set(*tb, value);
+        } break;
+    }
+    throw std::runtime_error("Table::set KYS 2");
 }
 
 std::shared_ptr<Value> Table::at(size_t key) {
     return int_table.at(key);
 }
 void Table::set(size_t key, std::shared_ptr<Value> value) {
-    int_table[key];
+    int_table[key] = value;
 }
 
 std::shared_ptr<Value> Table::at(const std::string &key) {
@@ -263,7 +351,7 @@ std::shared_ptr<Value> Table::at(const Number &key) {
 }
 void Table::set(const Number &key, std::shared_ptr<Value> value) {
     if (key.kind == Number::Kind::INT) int_table[key.integer] = value;
-    int_table[ std::round(key.floating) ] = value;
+    else int_table[ std::round(key.floating) ] = value;
 }
 
 std::shared_ptr<Value> Table::at(const Function &key) {

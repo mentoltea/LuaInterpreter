@@ -1,5 +1,40 @@
 #include "Compiler.h"
 
+std::string unescapeString(const std::string& input) {
+    static const std::unordered_map<char, char> escapeChars = {
+        {'n', '\n'},
+        {'t', '\t'},
+        {'r', '\r'},
+        {'e', '\e'},
+        {'\\', '\\'},
+        {'\'', '\''},
+        {'\"', '\"'},
+        {'0', '\0'}
+    };
+    
+    std::string result;
+    result.reserve(input.size());
+    
+    for (size_t i = 0; i < input.size(); ++i) {
+        if (input[i] == '\\' && i + 1 < input.size()) {
+            char next = input[i + 1];
+            auto it = escapeChars.find(next);
+            if (it != escapeChars.end()) {
+                result.push_back(it->second);
+                ++i;
+            } else {
+                result.push_back(input[i]);
+                result.push_back(next);
+                ++i;
+            }
+        } else {
+            result.push_back(input[i]);
+        }
+    }
+    
+    return result;
+}
+
 size_t Compiler::get_uid() { return uid++; }
 std::string Compiler::get_ustr() { 
     return "__uid_" + std::to_string(get_uid()) + "_"; 
@@ -904,26 +939,37 @@ std::vector< Instruction > Compiler::compile_statement(LuaAST::Statement *statem
             // GEN_FOR,
             // for var1, ...varn in exp do ...
             /*
+                f, container, key = [exp]
+                while true {
+                    var1, ... varn = f(container, key)
+                    key = var1
+                    if (key == nil) break
+                    key = var1
+                    [block]
+                }
+            */
+            /*
                 PUT_SCOPE
                 [Eval exp]
-                -- f, s, var = exp
+                -- f, s, key = exp
                 STORE __var
                 STORE __s
                 STORE __f
 
             __genfor_cond
                 PUT_SCOPE
-                [Eval f(s, var)]
+                [Eval f(s, key)]
                 STORE varn
                 ...
                 STORE var1
 
                 LOAD var1
-                NOT
+                PUT_NIL
+                EQ
                 BRANCH __genfor_end
                 
                 LOAD var1
-                STORE var
+                STORE key
                 [Block]
                 POP_SCOPE
                 GOTO __genfor_cond
@@ -972,7 +1018,7 @@ std::vector< Instruction > Compiler::compile_statement(LuaAST::Statement *statem
             result.push_back( 
                 Instruction { 
                     .type = Instruction::Type::LABEL,
-                    .name = cond_label
+                    .label = cond_label
                 } 
             );
 
@@ -1006,11 +1052,11 @@ std::vector< Instruction > Compiler::compile_statement(LuaAST::Statement *statem
                 } 
             );
 
-            for (auto &var: st->vars) {
+            for (auto it = st->vars.rbegin(); it != st->vars.rend(); it++) {
                 result.push_back( 
                     Instruction { 
                         .type = Instruction::Type::SET_LOCAL,
-                        .name = var
+                        .name = *it
                     } 
                 );
             }
@@ -1024,7 +1070,13 @@ std::vector< Instruction > Compiler::compile_statement(LuaAST::Statement *statem
 
             result.push_back( 
                 Instruction { 
-                    .type = Instruction::Type::NOT,
+                    .type = Instruction::Type::PUT_NIL,
+                } 
+            );
+
+            result.push_back( 
+                Instruction { 
+                    .type = Instruction::Type::EQ,
                 } 
             );
 
@@ -1203,10 +1255,13 @@ std::vector< Instruction > Compiler::compile_expression(
                 } break;
                 
                 case LuaAST::Literal::Kind::STRING: {
+                    std::string str = std::get<std::string> (exp->value);
+                    str = unescapeString(str.substr(1, str.size()-2));
+
                     result.push_back( 
                         Instruction { 
                             .type = Instruction::Type::PUT_STR,
-                            .str = std::get<std::string>(exp->value)
+                            .str = str
                         } 
                     );
                 } break;

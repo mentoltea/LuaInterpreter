@@ -39,6 +39,7 @@ Interpreter::Interpreter(
     this->program = program;
     collect_labels();
     LuaLibs::IO::include(this);
+    LuaLibs::Iterators::include(this);
 
     auto entry = std::make_shared<LuaValue::Function>("_start", 0, "varg");
     workers.push_back(
@@ -101,7 +102,7 @@ Executioner::Executioner(
         rets = entry->func(this, args);
         running = false;
     } else {
-        this->ip = g->labels[entry->label];
+        this->ip = g->labels.at(entry->label);
         callstack.push(entry->label);
     }
 }
@@ -333,8 +334,8 @@ void Executioner::execute(Instruction* inst) {
             } else
             if (v->type() == Value::Type::NUMBER) {
                 auto num = std::static_pointer_cast<LuaValue::Number>(v);
-                if (num->kind == LuaValue::Number::Kind::INT) std::cout << " " << num->integer;
-                else std::cout << " " << num->floating;
+                if (num->kind == LuaValue::Number::Kind::INT) std::cout << " " << num->integer << "i";
+                else std::cout << " " << num->floating << "f";
             }
             std::cout << std::endl;
             topstack.pop();
@@ -600,7 +601,7 @@ void Executioner::DYN_INDEX(Instruction *inst) {
         throw std::runtime_error("Interpretator: Indexing of non-table type");
     }
 
-    auto v = ((LuaValue::Table*) table.get())->at(*exp);
+    auto v = ((LuaValue::Table*) table.get())->at(exp);
     if (v) stacks.top().push(v);
     else stacks.top().push( std::make_shared<LuaValue::Nil>() );
 }
@@ -685,7 +686,7 @@ void Executioner::ASSIGN_WHAT_WHOM_WHERE(Instruction *inst) {
         throw std::runtime_error("Interpretator: Assigning of non-table type");
     }
 
-    ((LuaValue::Table*) whom.get())->set(*where, what); 
+    ((LuaValue::Table*) whom.get())->set(where, what); 
 }
 
 void Executioner::ASSIGN_WHOM_WHERE_WHAT(Instruction *inst) {
@@ -699,18 +700,18 @@ void Executioner::ASSIGN_WHOM_WHERE_WHAT(Instruction *inst) {
         throw std::runtime_error("Interpretator: Assigning of non-table type");
     }
 
-    ((LuaValue::Table*) whom.get())->set(*where, what); 
+    ((LuaValue::Table*) whom.get())->set(where, what); 
 }
 
 void Executioner::BRANCH(Instruction *inst) {
     auto cond = to_bool( pop_top() );
     if (cond->value) {
-        ip = g->labels[inst->label];
+        ip = g->labels.at(inst->label);
     }
 }
 
 void Executioner::GOTO(Instruction *inst) {
-    ip = g->labels[inst->label];
+    ip = g->labels.at(inst->label);
 }
 
 void Executioner::LABEL(Instruction *inst) {
@@ -757,7 +758,7 @@ void Executioner::raw_call(
         // stacks.push({});
         scopes.push( { Scope{} } );
         ret_addr.push(ip);
-        ip = g->labels[func->label];
+        ip = g->labels.at(func->label);
 
         int argsize = reversed_args.size();
         for (int i=0; i< (int)func->arg_N; i++) {
@@ -831,6 +832,9 @@ void Executioner::CALL(Instruction *inst) {
         }
     }
 
+    // method
+    if (func_arg != function) values.push_back(func_arg);
+
     if (inst->any_output) raw_call(function, values, ALL);
     else raw_call(function, values, inst->M);
 }
@@ -879,6 +883,9 @@ void Executioner::REV_CALL(Instruction *inst) {
     } else {
         throw std::runtime_error("Interpreter: Cannot call non-callable object");
     }
+
+    // method
+    if (func_arg != function) values.push_back(func_arg);
 
     if (inst->any_output) raw_call(function, values, ALL);
     else raw_call(function, values, inst->M);
@@ -1006,6 +1013,7 @@ void Executioner::DISCARD(Instruction *inst) {
 
 void Executioner::DUP(Instruction *inst) {
     auto val = pop_top();
+    stacks.top().push(val);
     stacks.top().push(val);
 }
 

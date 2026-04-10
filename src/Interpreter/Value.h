@@ -120,7 +120,7 @@ public:
     ~Table();
     virtual Type type() const override;
     Metatable meta;
-private:
+    // private:
     std::unordered_map< std::string , std::shared_ptr<Value> > string_table;
     std::unordered_map< std::int64_t , std::shared_ptr<Value> > int_table;
 
@@ -128,8 +128,8 @@ private:
     std::unordered_map< std::string , std::shared_ptr<Value> > func_table;
     std::unordered_map< void* , std::shared_ptr<Value> > data_table;
 public:
-    std::shared_ptr<Value> at(const Value &key);
-    void set(const Value &key, std::shared_ptr<Value> value);
+    std::shared_ptr<Value> at(std::shared_ptr<Value> key);
+    void set(std::shared_ptr<Value> key, std::shared_ptr<Value> value);
 
     std::shared_ptr<Value> at(size_t key);
     void set(size_t key, std::shared_ptr<Value> value);

@@ -113,7 +113,7 @@ target_compile_options(luai PRIVATE
     -Wno-missing-field-initializers
     -Wno-unused-parameter
     -ggdb -O0
-    -DINTERPRETER_DEBUG
+    # -DINTERPRETER_DEBUG
 )
 
 message(STATUS "ANTLR4 source dir: ${antlr4_SOURCE_DIR}")
