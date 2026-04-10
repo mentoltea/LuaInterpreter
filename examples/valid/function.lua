@@ -23,8 +23,8 @@ local mn, mx = min_max(5, 2, 8)  -- mn=2, mx=8
 
 -- Функция с переменным числом аргументов (через arg)
 function join(separator, ...)
-    local result = arg[1]
-    for i = 2, arg.n do
+    local result = varg[1]
+    for i = 2, varg.n do
         result = result .. separator .. arg[i]
     end
     return result
