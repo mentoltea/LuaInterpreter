@@ -13,6 +13,7 @@
 // libs
 #include "libs/io/io.h"
 #include "libs/iterators/iterators.h"
+#include "libs/error/error.h"
 
 namespace LuaInterpreter {
 
@@ -64,6 +65,7 @@ public:
     
     std::stack < std::string > callstack;
     std::stack < int > to_return;
+    
     static constexpr int ALL = -1;
 
     bool running = true;

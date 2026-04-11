@@ -42,6 +42,7 @@ Interpreter::Interpreter(
     collect_labels();
     LuaLibs::IO::include(this);
     LuaLibs::Iterators::include(this);
+    LuaLibs::Error::include(this);
 
     auto entry = std::make_shared<LuaValue::Function>("_start", 0, "varg");
     workers.push_back(
@@ -126,8 +127,11 @@ Instruction* Executioner::fetch_instruction() {
 
 void Executioner::execute(Instruction* inst) {
     #ifdef INTERPRETER_DEBUG
-    std::cout << std::endl << *inst << std::endl;
+    std::cout << std::endl << ip << " : " << *inst << std::endl;
     #endif
+    bool unknown_inst_error = false;
+
+    // try {
     switch (inst->type) {
         case Instruction::Type::NOP: {
             NOP(inst);
@@ -320,11 +324,39 @@ void Executioner::execute(Instruction* inst) {
         } break;
 
         default: {
-        throw std::runtime_error("Unknown instruction type: " + std::to_string((int)inst->type));
+            unknown_inst_error = true;
+        }
     }
+    // } catch (std::runtime_error& e) {
+    //     if (catches.empty()) {
+    //         std::cerr << "Uncaught error: " << e.what() << std::endl;
+    //         while (!callstack.empty()) {
+    //             std::cerr << "From " << callstack.top() << std::endl;
+    //             callstack.pop();
+    //         }
+    //         throw e;
+    //     }
+
+    //     auto error = std::make_shared<LuaValue::String>( e.what() );
+        
+    //     Catch c = catches.top();
+    //     while (ret_addr.size() != c.ret_addr_size) ret_addr.pop();
+    //     while (scopes.size() != c.scopes_size) scopes.pop();
+    //     while (stacks.size() != c.stacks_size) stacks.pop();
+    //     while (callstack.size() != c.callstack_size) callstack.pop();
+    //     while (to_return.size() != c.to_return_size) to_return.pop();
+    //     ip = c.ip;
+
+    //     stacks.top().push( std::make_shared<LuaValue::Boolean>(false) );
+    //     stacks.top().push( error );
+    // }
+    
+    if (unknown_inst_error) {
+        throw std::runtime_error("Unknown instruction type: " + std::to_string((int)inst->type));
     }
 
     #ifdef INTERPRETER_DEBUG
+    std::cout << "#stacks: " << stacks.size() << std::endl;
     if (!stacks.empty()) {
         auto topstack = stacks.top();
         if (topstack.empty()) std::cout << "empty" << std::endl;
@@ -930,8 +962,7 @@ void Executioner::RET(Instruction *inst) {
         }
     }
 
-    // v_1 ... v_n
-    std::reverse(values.begin(), values.end());
+    
 
     if (to_return.empty()) {
         // end of given function
@@ -940,6 +971,19 @@ void Executioner::RET(Instruction *inst) {
         stop = true;
         return;
     }
+    callstack.pop();
+    scopes.pop();
+    ip = ret_addr.top(); ret_addr.pop();
+    // if (!catches.empty()) {
+    //     if (ip == catches.top().ip) {
+    //         // return out of success pcall
+    //         catches.pop();
+    //         values.push_back( std::make_shared<LuaValue::Boolean>(true) );
+    //     }
+    // }
+
+    // v_1 ... v_n
+    std::reverse(values.begin(), values.end());
 
     int tr = to_return.top(); to_return.pop();
     if (tr == ALL) {
@@ -952,9 +996,6 @@ void Executioner::RET(Instruction *inst) {
         }
     }
 
-    callstack.pop();
-    scopes.pop();
-    ip = ret_addr.top(); ret_addr.pop();
     stop = true;
 }
 
