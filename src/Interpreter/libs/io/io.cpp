@@ -224,23 +224,38 @@ std::vector< std::shared_ptr<Value> > IO::File::write (
     for (size_t i=0; i<N; i++) {
         auto &arg = args[i];
 
-        std::string data;
+        std::stringstream data;
         auto type = arg->type();
         if (type == Value::Type::NIL) {
-            data = "nil";
+            data << "nil";
         } else 
         if (type == Value::Type::STRING) {
             auto str = std::static_pointer_cast<LuaValue::String>(arg);
-            data = str->value;
+            data << str->value;
         } else 
         if (type == Value::Type::NUMBER) {
             auto num = std::static_pointer_cast<LuaValue::Number>(arg);
             if (num->kind == LuaValue::Number::Kind::INT) {
-                data = std::to_string( num->integer );
+                data << std::to_string( num->integer );
             } else {
-                data = std::to_string( (double) num->floating );
+                data << std::to_string( (double) num->floating );
             }
-        } else {
+        } else
+
+        if (type == Value::Type::FUNCTION) {
+            auto func = std::static_pointer_cast<LuaValue::Function>(arg);
+            data << "Function(" << func->key() << ")";
+        } else
+        if (type == Value::Type::TABLE) {
+            auto tb = std::static_pointer_cast<LuaValue::Table>(arg);
+            data << "Table(" << tb.get() << ")";
+        } else
+        if (type == Value::Type::USERDATA) {
+            auto ud = std::static_pointer_cast<LuaValue::Userdata>(arg);
+            auto typestr = exec->type_of(ud);
+            data << typestr << "(" << ud.get() << ")";
+        } else
+        {
             throw std::runtime_error("IO::File::write - cannot write object of type " + std::to_string((int)type));
         }
 
@@ -248,7 +263,8 @@ std::vector< std::shared_ptr<Value> > IO::File::write (
         //     data += " ";
         // }
 
-        bytes += buffer->sputn(data.data(), data.size());
+        auto fd = data.str();
+        bytes += buffer->sputn(fd.data(), fd.size());
     }
 
     return { std::make_shared<LuaValue::Number> ((int64_t) bytes) };

@@ -29,6 +29,8 @@ void Interpreter::collect_labels() {
         Instruction &inst = program[i];
         if (inst.type == Instruction::Type::LABEL) {
             labels[inst.label] = i;
+        } else if (inst.type == Instruction::Type::PUT_FUNC) {
+            func_args[inst.label] = {inst.N, inst.name};
         }
     }
 }
@@ -405,6 +407,49 @@ std::shared_ptr< Value > Executioner::pop_top() {
     }
 
     return std::shared_ptr<Value> (new LuaValue::Nil);
+}
+
+std::pair<
+    std::shared_ptr<LuaValue::Function>,    // function
+    std::shared_ptr<Value>   // reference
+> Executioner::to_function(
+    std::shared_ptr<Value> func_arg,
+    int max_recursion
+) {
+    auto type = func_arg->type();
+    if (!func_arg) {
+        return {nullptr, nullptr};
+    }
+
+    std::shared_ptr<LuaValue::Function> function;
+    if (type == Value::Type::FUNCTION)  {
+        return {std::static_pointer_cast<LuaValue::Function>(func_arg), nullptr};
+    }
+
+    if (type == Value::Type::TABLE) {
+        auto res = ((LuaValue::Table*) func_arg.get())->meta.at("__call");
+        if (!res || (max_recursion <= 0 && max_recursion != ALL)) {
+            return {nullptr, nullptr};
+        }
+        if (res->type() != Value::Type::FUNCTION) {
+            if (max_recursion == ALL) return to_function(res, max_recursion); 
+            return to_function(res, max_recursion-1); 
+        }
+        return {std::static_pointer_cast<LuaValue::Function>(res), func_arg};
+    }
+
+    if (type == Value::Type::USERDATA) {
+        auto res = ((LuaValue::Userdata*) func_arg.get())->meta.at("__call");
+        if (!res || (max_recursion <= 0 && max_recursion != ALL)) {
+            return {nullptr, nullptr};
+        }
+        if (res->type() != Value::Type::FUNCTION) {
+            if (max_recursion == ALL) return to_function(res, max_recursion); 
+            return to_function(res, max_recursion-1); 
+        }
+        return {std::static_pointer_cast<LuaValue::Function>(res), func_arg};
+    }
+    return {nullptr, nullptr};
 }
 
 std::shared_ptr< LuaValue::Boolean > Executioner::to_bool(std::shared_ptr< Value > value) {
@@ -789,27 +834,10 @@ void Executioner::raw_call(
 
 void Executioner::CALL(Instruction *inst) {
     auto func_arg = pop_top();
-    auto type = func_arg->type();
 
-    std::shared_ptr<LuaValue::Function> function;
-    if (type == Value::Type::FUNCTION)  function = std::static_pointer_cast<LuaValue::Function>(func_arg);
-    else if (type == Value::Type::TABLE) {
-        auto res = ((LuaValue::Table*) func_arg.get())->meta.at("__call");
-        if (!res || res->type() != Value::Type::FUNCTION) {
-            throw std::runtime_error("Interpreter: Cannot call non-callable object");
-        }
-        function = std::static_pointer_cast<LuaValue::Function>(res);
-    }
-    else if (type == Value::Type::USERDATA) {
-        auto res = ((LuaValue::Userdata*) func_arg.get())->meta.at("__call");
-        if (!res || res->type() != Value::Type::FUNCTION) {
-            throw std::runtime_error("Interpreter: Cannot call non-callable object");
-        }
-        function = std::static_pointer_cast<LuaValue::Function>(res);
-    } else {
-        throw std::runtime_error("Interpreter: Cannot call non-callable object");
-    }
-
+    auto pair = to_function(func_arg, ALL);
+    if (!pair.first) throw std::runtime_error("Interpreter: Cannot call non-callable object");
+    std::shared_ptr<LuaValue::Function> function = pair.first; 
 
     auto &top = stacks.top();
 
@@ -833,7 +861,7 @@ void Executioner::CALL(Instruction *inst) {
     }
 
     // method
-    if (func_arg != function) values.push_back(func_arg);
+    if (pair.second) values.push_back(pair.second);
 
     if (inst->any_output) raw_call(function, values, ALL);
     else raw_call(function, values, inst->M);
@@ -863,29 +891,13 @@ void Executioner::REV_CALL(Instruction *inst) {
 
     auto func_arg = values.back();
     values.pop_back();
-    auto type = func_arg->type();
 
-    std::shared_ptr<LuaValue::Function> function;
-    if (type == Value::Type::FUNCTION)  function = std::static_pointer_cast<LuaValue::Function>(func_arg);
-    else if (type == Value::Type::TABLE) {
-        auto res = ((LuaValue::Table*) func_arg.get())->meta.at("__call");
-        if (!res || res->type() != Value::Type::FUNCTION) {
-            throw std::runtime_error("Interpreter: Cannot call non-callable object");
-        }
-        function = std::static_pointer_cast<LuaValue::Function>(res);
-    }
-    else if (type == Value::Type::USERDATA) {
-        auto res = ((LuaValue::Userdata*) func_arg.get())->meta.at("__call");
-        if (!res || res->type() != Value::Type::FUNCTION) {
-            throw std::runtime_error("Interpreter: Cannot call non-callable object");
-        }
-        function = std::static_pointer_cast<LuaValue::Function>(res);
-    } else {
-        throw std::runtime_error("Interpreter: Cannot call non-callable object");
-    }
+    auto pair = to_function(func_arg, ALL);
+    if (!pair.first) throw std::runtime_error("Interpreter: Cannot call non-callable object");
+    std::shared_ptr<LuaValue::Function> function = pair.first; 
 
     // method
-    if (func_arg != function) values.push_back(func_arg);
+    if (pair.second) values.push_back(pair.second);
 
     if (inst->any_output) raw_call(function, values, ALL);
     else raw_call(function, values, inst->M);

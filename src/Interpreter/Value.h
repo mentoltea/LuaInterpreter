@@ -109,6 +109,7 @@ public:
     void* data;
 
     Userdata();
+    Userdata(void* data);
     Userdata(const std::string& strtype);
 
     void set_type(const std::string& strtype);

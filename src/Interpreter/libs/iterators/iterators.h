@@ -13,6 +13,19 @@ public:
 
 static void include(Interpreter* interp);
 
+static std::vector< std::shared_ptr<Value> > ipairs(
+    Executioner* exec,
+    std::vector< std::shared_ptr<Value> > &args
+);
+
+
+static std::vector< std::shared_ptr<Value> > pairs(
+    Executioner* exec,
+    std::vector< std::shared_ptr<Value> > &args
+);
+
+
+
 class Iterator: public LuaValue::Userdata {
 public:
     std::shared_ptr<Value> container;
@@ -42,13 +55,22 @@ public:
     );
 };
 
+class KIterator: public Iterator {
+public:
+    std::unordered_map< std::string , std::shared_ptr<Value> >::iterator string_it;
+    std::unordered_map< std::int64_t , std::shared_ptr<Value> >::iterator int_it;
+    std::unordered_map< std::string , std::shared_ptr<Value> >::iterator func_it;
+    std::unordered_map< void* , std::shared_ptr<Value> >::iterator data_it;
 
-static std::vector< std::shared_ptr<Value> > ipairs(
-    Executioner* exec,
-    std::vector< std::shared_ptr<Value> > &args
-);
+    static constexpr std::string typestr = "__iterator_k";
 
+    KIterator(std::shared_ptr<LuaValue::Table> container);
 
+    std::vector< std::shared_ptr<Value> > next(
+        Executioner* exec,
+        std::vector< std::shared_ptr<Value> > &args
+    );
+};
 
 
 }; //Iterators

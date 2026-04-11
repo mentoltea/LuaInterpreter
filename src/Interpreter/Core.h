@@ -34,6 +34,7 @@ public:
     std::vector< std::unique_ptr< Executioner > > workers;
 
     std::unordered_map< std::string, size_t > labels;
+    std::unordered_map< std::string, std::pair<int, std::string> > func_args;
     
     void collect_labels();
 
@@ -88,10 +89,24 @@ public:
     // Others: switch value->type()
     // Userdata: metatable[ "__type" ] = type
     static bool is_type_of(std::shared_ptr< Value > value, const std::string& type);
-private:
+
+    void raw_call(
+        std::shared_ptr<LuaValue::Function> func,
+        std::vector< std::shared_ptr<Value> > & reversed_args,
+        int return_size
+    );
+// private:
     bool is_barrier(const std::stack< std::shared_ptr<Value> > st) const;
 
     std::shared_ptr< Value > pop_top();
+
+    std::pair<
+        std::shared_ptr<LuaValue::Function>,    // function
+        std::shared_ptr<Value>   // reference
+    > to_function(
+        std::shared_ptr<Value> func_arg,
+        int max_recursion
+    );
 
     std::shared_ptr< LuaValue::Boolean > to_bool(std::shared_ptr< Value > value);
 
@@ -145,12 +160,6 @@ private:
 
     void GOTO(Instruction *inst);
     void LABEL(Instruction *inst);
-
-    void raw_call(
-        std::shared_ptr<LuaValue::Function> func,
-        std::vector< std::shared_ptr<Value> > & reversed_args,
-        int return_size
-    );
 
     void CALL(Instruction *inst);
 

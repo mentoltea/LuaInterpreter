@@ -201,6 +201,9 @@ Userdata::~Userdata() = default;
 Userdata::Userdata() {
     set_type("Userdata");
 }
+Userdata::Userdata(void* data): data(data) {
+    set_type("Userdata");
+}
 Userdata::Userdata(const std::string& strtype) {
     set_type(strtype);
 }
