@@ -226,37 +226,45 @@ std::vector< std::shared_ptr<Value> > IO::File::write (
 
         std::stringstream data;
         auto type = arg->type();
-        if (type == Value::Type::NIL) {
-            data << "nil";
-        } else 
-        if (type == Value::Type::STRING) {
-            auto str = std::static_pointer_cast<LuaValue::String>(arg);
-            data << str->value;
-        } else 
-        if (type == Value::Type::NUMBER) {
-            auto num = std::static_pointer_cast<LuaValue::Number>(arg);
-            if (num->kind == LuaValue::Number::Kind::INT) {
-                data << std::to_string( num->integer );
-            } else {
-                data << std::to_string( (double) num->floating );
+        switch (type) {
+            case Value::Type::NIL: { data << "nil"; } break;
+            case Value::Type::BOOLEAN: {
+                auto bl = std::static_pointer_cast<LuaValue::Boolean>(arg);
+                if (bl->value) {
+                    data << "true";
+                } else {
+                    data << "false";
+                }
+            } break;
+            case Value::Type::NUMBER: {
+                auto num = std::static_pointer_cast<LuaValue::Number>(arg);
+                if (num->kind == LuaValue::Number::Kind::INT) {
+                    data << std::to_string( num->integer );
+                } else {
+                    data << std::to_string( (double) num->floating );
+                }
+            } break;
+            case Value::Type::STRING: {
+                auto str = std::static_pointer_cast<LuaValue::String>(arg);
+                data << str->value;
+            } break;
+            case Value::Type::FUNCTION: {
+                auto func = std::static_pointer_cast<LuaValue::Function>(arg);
+                data << "Function(" << func->key() << ")";
+            } break;
+            case Value::Type::THREAD: {} break;
+            case Value::Type::USERDATA: {
+                auto ud = std::static_pointer_cast<LuaValue::Userdata>(arg);
+                auto typestr = exec->type_of(ud);
+                data << typestr << "(" << ud.get() << ")";
+            } break;
+            case Value::Type::TABLE: {
+                auto tb = std::static_pointer_cast<LuaValue::Table>(arg);
+                data << "Table(" << tb.get() << ")";
+            } break;
+            default: {
+                throw std::runtime_error("IO::File::write - cannot write object of type " + std::to_string((int)type));
             }
-        } else
-
-        if (type == Value::Type::FUNCTION) {
-            auto func = std::static_pointer_cast<LuaValue::Function>(arg);
-            data << "Function(" << func->key() << ")";
-        } else
-        if (type == Value::Type::TABLE) {
-            auto tb = std::static_pointer_cast<LuaValue::Table>(arg);
-            data << "Table(" << tb.get() << ")";
-        } else
-        if (type == Value::Type::USERDATA) {
-            auto ud = std::static_pointer_cast<LuaValue::Userdata>(arg);
-            auto typestr = exec->type_of(ud);
-            data << typestr << "(" << ud.get() << ")";
-        } else
-        {
-            throw std::runtime_error("IO::File::write - cannot write object of type " + std::to_string((int)type));
         }
 
         // if (i != N-1) {

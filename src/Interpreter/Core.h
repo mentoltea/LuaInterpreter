@@ -13,6 +13,8 @@
 // libs
 #include "libs/io/io.h"
 #include "libs/iterators/iterators.h"
+#include "libs/iterators/map.h"
+#include "libs/typing/type.h"
 #include "libs/error/error.h"
 
 namespace LuaInterpreter {

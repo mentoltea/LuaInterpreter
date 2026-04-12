@@ -53,11 +53,14 @@ Compiler::Compiler(std::shared_ptr< LuaAST::Block > ast): statan(ast) {
     std::cout << std::endl << "Static analyzation passed" << std::endl;
 }
 
-std::vector< Instruction > Compiler::compile(std::shared_ptr<LuaAST::Block> block) {
+std::vector< Instruction > Compiler::compile(
+    std::shared_ptr<LuaAST::Block> block,
+    const std::string& entry_name
+) {
     LuaAST::FuncBody entry;
     entry.block = block;
     functions_to_compile.push( {
-        .funcname = "_start", 
+        .funcname = entry_name, 
         .body = &entry,
     } );
 

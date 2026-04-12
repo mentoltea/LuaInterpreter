@@ -76,18 +76,26 @@ int main(int argc, char** argv) {
         << normal_color 
     << std::endl;
 
-    for (auto &inst: bytecode) {
-        std::cout << inst << std::endl;
+    for (size_t i=0; i<bytecode.size(); i++) {
+        std::cout << i << ": " << bytecode[i] << std::endl;
     }
 
     std::cout 
         << std::endl 
         << blue_color
-        << "Intepreting"
+        << "Setting up interpreter"
         << normal_color 
     << std::endl;
 
     LuaInterpreter::Interpreter interp(bytecode);
+
+    std::cout 
+        << std::endl 
+        << blue_color
+        << "Interpreting"
+        << normal_color 
+    << std::endl;
+
     auto result = interp.run();
 
     if (!result) {

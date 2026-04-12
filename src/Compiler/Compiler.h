@@ -22,18 +22,24 @@ class Compiler {
     std::vector< std::string > prefixes;
     std::string get_prefix();
 
+    public:
     struct FunctionToCompile {
         std::string funcname;
         LuaAST::FuncBody* body;
         bool is_method = false;
     };
+    private:
+    
     std::queue< FunctionToCompile > functions_to_compile;
 
     StaticAnalyzer statan;
 public:
     Compiler(std::shared_ptr< LuaAST::Block > ast);
 
-    std::vector< Instruction > compile(std::shared_ptr<LuaAST::Block> block);
+    std::vector< Instruction > compile(
+        std::shared_ptr<LuaAST::Block> block,
+        const std::string& entry_name = "_start"
+    );
 
     std::vector< Instruction > compile_function(FunctionToCompile &func);
 

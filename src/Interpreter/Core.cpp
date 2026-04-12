@@ -39,11 +39,13 @@ Interpreter::Interpreter(
     const std::vector< Instruction >& program
 ) {
     this->program = program;
-    collect_labels();
     LuaLibs::IO::include(this);
     LuaLibs::Iterators::include(this);
+    LuaLibs::Map::include(this);
+    LuaLibs::Typing::include(this);
     LuaLibs::Error::include(this);
-
+    
+    collect_labels();
     auto entry = std::make_shared<LuaValue::Function>("_start", 0, "varg");
     workers.push_back(
         std::make_unique<Executioner>(
