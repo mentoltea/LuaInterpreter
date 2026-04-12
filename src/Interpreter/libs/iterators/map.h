@@ -4,6 +4,7 @@
 #include "Interpreter/Base.h"
 #include "Interpreter/Value.h"
 #include "Interpreter/Core.h"
+#include "Interpreter/libs/extension.h"
 
 namespace LuaInterpreter {
 namespace LuaLibs {
@@ -11,9 +12,6 @@ namespace LuaLibs {
 class Map {
 public:
     static void include(Interpreter* interp);
-
-    static void include_imap(Interpreter* interp);
-    static void include_map(Interpreter* interp);
 }; // Map
 
 }; // LuaLibs

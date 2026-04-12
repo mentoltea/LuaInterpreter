@@ -50,7 +50,6 @@ std::string Compiler::get_prefix() {
 }
 
 Compiler::Compiler(std::shared_ptr< LuaAST::Block > ast): statan(ast) {
-    std::cout << std::endl << "Static analyzation passed" << std::endl;
 }
 
 std::vector< Instruction > Compiler::compile(

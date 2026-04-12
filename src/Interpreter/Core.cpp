@@ -1304,7 +1304,22 @@ void Executioner::POW(Instruction *inst) {
 }
 
 void Executioner::HASH(Instruction *inst) {
-    throw std::runtime_error("Interpreter: Hash operation is not supported yet");
+    auto arg = pop_top();
+
+    size_t result = 0;
+    if (arg->type() == Value::Type::STRING) {
+        result = std::static_pointer_cast<LuaValue::String>(arg)->value.size();
+    } else
+    if (arg->type() == Value::Type::TABLE) {
+        auto table = std::static_pointer_cast<LuaValue::Table>(arg);
+        while (table->int_table.contains(result)) result++;
+    } else {
+        throw std::runtime_error("Interpreter: Cannot perform hash operation on arbitary value");
+    }
+
+    stacks.top().push(
+        std::make_shared<LuaValue::Number>((int64_t)result)
+    );
 }
 
 void Executioner::NEG(Instruction *inst) {

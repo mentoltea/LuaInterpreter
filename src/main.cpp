@@ -61,11 +61,25 @@ int main(int argc, char** argv) {
     std::cout
         << std::endl 
         << blue_color 
-        << "Compiling"
+        << "Analyzing..."
         << normal_color 
     << std::endl;
 
     Compiler compiler(ast);
+
+    std::cout
+        << std::endl 
+        << blue_color 
+        << "Static analyzation passed"
+        << normal_color 
+    << std::endl;
+
+    std::cout
+        << std::endl 
+        << blue_color 
+        << "Compiling..."
+        << normal_color 
+    << std::endl;
 
     auto bytecode = compiler.compile(ast);
 
@@ -92,7 +106,7 @@ int main(int argc, char** argv) {
     std::cout 
         << std::endl 
         << blue_color
-        << "Interpreting"
+        << "Interpreting..."
         << normal_color 
     << std::endl;
 

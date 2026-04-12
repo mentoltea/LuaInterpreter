@@ -56,7 +56,7 @@ void Lua55Listener::exitStatement(Lua55GrammarParser::StatementContext * ctx){
     frame.last = st;
 
     // std::cout << "statement ";
-    st->print(std::cout);
+    // st->print(std::cout);
     // std::cout << std::endl;
 }
 
@@ -425,7 +425,7 @@ void Lua55Listener::exitExp(Lua55GrammarParser::ExpContext * ctx){
     // std::cout << "Lua55Listener::exitExp" << std::endl; 
     
     // std::cout << "expression ";
-    state.stack.top()->print(std::cout);
+    // state.stack.top()->print(std::cout);
     // std::cout << std::endl;
 }
 
