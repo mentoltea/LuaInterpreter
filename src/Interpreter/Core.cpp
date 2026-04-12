@@ -845,6 +845,7 @@ void Executioner::raw_call(
         // built-in function
         std::reverse(reversed_args.begin(), reversed_args.end());
         auto result = func->func(this, reversed_args);
+        if (result.empty()) result.push_back( std::make_shared<LuaValue::Nil>() );
         if (return_size == ALL) {
             for (auto &r: result) {
                 stacks.top().push(r);
