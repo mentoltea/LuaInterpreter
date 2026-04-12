@@ -37,6 +37,8 @@ public:
 
     std::vector< std::unique_ptr< Executioner > > workers;
 
+    std::unordered_map< cxx_func, std::string > cxx_funcnames;
+
     std::unordered_map< std::string, size_t > labels;
     std::unordered_map< std::string, std::pair<int, std::string> > func_args;
     

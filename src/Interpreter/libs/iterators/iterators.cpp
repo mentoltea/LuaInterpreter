@@ -4,8 +4,10 @@ using namespace LuaInterpreter;
 using namespace LuaLibs;
 
 void Iterators::include(Interpreter* interp) {
-    interp->global.set("pairs", std::make_shared<LuaValue::Function>((cxx_func) &pairs));
-    interp->global.set("ipairs", std::make_shared<LuaValue::Function>((cxx_func) &ipairs));
+    interp->global.set("pairs",     std::make_shared<LuaValue::Function>((cxx_func) &pairs));
+    interp->cxx_funcnames[(cxx_func) &pairs] = "Iterators::pairs";
+    interp->global.set("ipairs",    std::make_shared<LuaValue::Function>((cxx_func) &ipairs));
+    interp->cxx_funcnames[(cxx_func) &ipairs] = "Iterators::ipairs";
 }
 
 std::vector< std::shared_ptr<Value> > Iterators::ipairs(

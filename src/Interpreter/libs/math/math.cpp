@@ -12,38 +12,94 @@ using namespace LuaValue;
 void Math::include(Interpreter* interp) {
     std::shared_ptr<Table> table = std::make_shared<Table>();
 
-    // Basic math functions
-    table->set("abs", std::make_shared<Function>((cxx_func)&abs));
-    table->set("acos", std::make_shared<Function>((cxx_func)&acos));
-    table->set("asin", std::make_shared<Function>((cxx_func)&asin));
-    table->set("atan", std::make_shared<Function>((cxx_func)&atan));
-    table->set("ceil", std::make_shared<Function>((cxx_func)&ceil));
-    table->set("cos", std::make_shared<Function>((cxx_func)&cos));
-    table->set("deg", std::make_shared<Function>((cxx_func)&deg));
-    table->set("exp", std::make_shared<Function>((cxx_func)&exp));
+    table->set("abs",   std::make_shared<Function>((cxx_func)&abs));
+    interp->cxx_funcnames[(cxx_func) &abs] = "Math::abs";
+
+    table->set("acos",  std::make_shared<Function>((cxx_func)&acos));
+    interp->cxx_funcnames[(cxx_func) &acos] = "Math::acos";
+
+    table->set("asin",  std::make_shared<Function>((cxx_func)&asin));
+    interp->cxx_funcnames[(cxx_func) &asin] = "Math::asin";
+
+    table->set("atan",  std::make_shared<Function>((cxx_func)&atan));
+    interp->cxx_funcnames[(cxx_func) &atan] = "Math::atan";
+
+    table->set("ceil",  std::make_shared<Function>((cxx_func)&ceil));
+    interp->cxx_funcnames[(cxx_func) &ceil] = "Math::ceil";
+
+    table->set("cos",   std::make_shared<Function>((cxx_func)&cos));
+    interp->cxx_funcnames[(cxx_func) &cos] = "Math::cos";
+
+    table->set("deg",   std::make_shared<Function>((cxx_func)&deg));
+    interp->cxx_funcnames[(cxx_func) &deg] = "Math::deg";
+
+    table->set("exp",   std::make_shared<Function>((cxx_func)&exp));
+    interp->cxx_funcnames[(cxx_func) &exp] = "Math::exp";
+
     table->set("floor", std::make_shared<Function>((cxx_func)&floor));
-    table->set("fmod", std::make_shared<Function>((cxx_func)&fmod));
+    interp->cxx_funcnames[(cxx_func) &floor] = "Math::floor";
+
+    table->set("fmod",  std::make_shared<Function>((cxx_func)&fmod));
+    interp->cxx_funcnames[(cxx_func) &fmod] = "Math::fmod";
+
     table->set("frexp", std::make_shared<Function>((cxx_func)&frexp));
+    interp->cxx_funcnames[(cxx_func) &frexp] = "Math::frexp";
+
     table->set("ldexp", std::make_shared<Function>((cxx_func)&ldexp));
-    table->set("log", std::make_shared<Function>((cxx_func)&log));
-    table->set("max", std::make_shared<Function>((cxx_func)&max));
-    table->set("min", std::make_shared<Function>((cxx_func)&min));
-    table->set("modf", std::make_shared<Function>((cxx_func)&modf));
-    table->set("rad", std::make_shared<Function>((cxx_func)&rad));
-    table->set("random", std::make_shared<Function>((cxx_func)&random));
-    table->set("randomseed", std::make_shared<Function>((cxx_func)&randomseed));
-    table->set("sin", std::make_shared<Function>((cxx_func)&sin));
-    table->set("sqrt", std::make_shared<Function>((cxx_func)&sqrt));
-    table->set("tan", std::make_shared<Function>((cxx_func)&tan));
+    interp->cxx_funcnames[(cxx_func) &ldexp] = "Math::ldexp";
+
+    table->set("log",   std::make_shared<Function>((cxx_func)&log));
+    interp->cxx_funcnames[(cxx_func) &log] = "Math::log";
+
+    table->set("max",   std::make_shared<Function>((cxx_func)&max));
+    interp->cxx_funcnames[(cxx_func) &max] = "Math::max";
+
+    table->set("min",   std::make_shared<Function>((cxx_func)&min));
+    interp->cxx_funcnames[(cxx_func) &min] = "Math::min";
+
+    table->set("modf",  std::make_shared<Function>((cxx_func)&modf));
+    interp->cxx_funcnames[(cxx_func) &modf] = "Math::modf";
+
+    table->set("rad",   std::make_shared<Function>((cxx_func)&rad));
+    interp->cxx_funcnames[(cxx_func) &rad] = "Math::rad";
+
+    table->set("random",std::make_shared<Function>((cxx_func)&random));
+    interp->cxx_funcnames[(cxx_func) &random] = "Math::random";
+
+    table->set("randomseed",std::make_shared<Function>((cxx_func)&randomseed));
+    interp->cxx_funcnames[(cxx_func) &randomseed] = "Math::randomseed";
+
+    table->set("sin",   std::make_shared<Function>((cxx_func)&sin));
+    interp->cxx_funcnames[(cxx_func) &sin] = "Math::sin";
+
+    table->set("sqrt",  std::make_shared<Function>((cxx_func)&sqrt));
+    interp->cxx_funcnames[(cxx_func) &sqrt] = "Math::sqrt";
+
+    table->set("tan",   std::make_shared<Function>((cxx_func)&tan));
+    interp->cxx_funcnames[(cxx_func) &tan] = "Math::tan";
+
     table->set("tointeger", std::make_shared<Function>((cxx_func)&tointeger));
-    table->set("type", std::make_shared<Function>((cxx_func)&type));
-    table->set("ult", std::make_shared<Function>((cxx_func)&ult));
-    
-    // Constants
-    table->set("huge", std::make_shared<Function>((cxx_func)&huge));
-    table->set("pi", std::make_shared<Function>((cxx_func)&pi));
-    table->set("maxinteger", std::make_shared<Function>((cxx_func)&maxinteger));
-    table->set("mininteger", std::make_shared<Function>((cxx_func)&mininteger));
+    interp->cxx_funcnames[(cxx_func) &tointeger] = "Math::tointeger";
+
+    table->set("type",  std::make_shared<Function>((cxx_func)&type));
+    interp->cxx_funcnames[(cxx_func) &type] = "Math::type";
+
+    table->set("ult",   std::make_shared<Function>((cxx_func)&ult));
+    interp->cxx_funcnames[(cxx_func) &ult] = "Math::ult";
+
+
+    table->set("huge",  std::make_shared<Function>((cxx_func)&huge));
+    interp->cxx_funcnames[(cxx_func) &huge] = "Math::huge";
+
+    table->set("pi",    std::make_shared<Function>((cxx_func)&pi));
+    interp->cxx_funcnames[(cxx_func) &pi] = "Math::pi";
+
+    table->set("maxinteger",    std::make_shared<Function>((cxx_func)&maxinteger));
+    interp->cxx_funcnames[(cxx_func) &maxinteger] = "Math::maxinteger";
+
+    table->set("mininteger",    std::make_shared<Function>((cxx_func)&mininteger));
+    interp->cxx_funcnames[(cxx_func) &mininteger] = "Math::mininteger";
+
 
     interp->global.set("math", table);
 }

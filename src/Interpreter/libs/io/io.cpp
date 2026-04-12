@@ -7,14 +7,23 @@ void IO::include(Interpreter* interp) {
     auto table = std::make_shared<LuaValue::Table>();
 
     table->set("close"  , std::make_shared< LuaValue::Function >( (cxx_func) &close));
+    interp->cxx_funcnames[(cxx_func) &close] = "IO::close";
     table->set("flush"  , std::make_shared< LuaValue::Function >( (cxx_func) &flush));
+    interp->cxx_funcnames[(cxx_func) &flush] = "IO::flush";
     table->set("input"  , std::make_shared< LuaValue::Function >( (cxx_func) &input));
+    interp->cxx_funcnames[(cxx_func) &input] = "IO::input";
     table->set("lines"  , std::make_shared< LuaValue::Function >( (cxx_func) &lines));
+    interp->cxx_funcnames[(cxx_func) &lines] = "IO::lines";
     table->set("open"   , std::make_shared< LuaValue::Function >( (cxx_func) &open));
+    interp->cxx_funcnames[(cxx_func) &open] = "IO::open";
     table->set("output" , std::make_shared< LuaValue::Function >( (cxx_func) &output));
+    interp->cxx_funcnames[(cxx_func) &output] = "IO::output";
     table->set("read"   , std::make_shared< LuaValue::Function >( (cxx_func) &read));
+    interp->cxx_funcnames[(cxx_func) &read] = "IO::read";
     table->set("type"   , std::make_shared< LuaValue::Function >( (cxx_func) &type));
+    interp->cxx_funcnames[(cxx_func) &type] = "IO::type";
     table->set("write"  , std::make_shared< LuaValue::Function >( (cxx_func) &write));
+    interp->cxx_funcnames[(cxx_func) &write] = "IO::write";
 
     interp->global.set("io", table);
 }

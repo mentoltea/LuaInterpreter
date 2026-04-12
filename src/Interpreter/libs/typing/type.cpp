@@ -5,7 +5,9 @@ using namespace LuaLibs;
 
 void Typing::include(Interpreter* interp) {
     interp->global.set("type", std::make_shared<LuaValue::Function>((cxx_func) &type));
+    interp->cxx_funcnames[(cxx_func) &type] = "Typing::type";
     interp->global.set("callable", std::make_shared<LuaValue::Function>((cxx_func) &callable));
+    interp->cxx_funcnames[(cxx_func) &callable] = "Typing::callable";
 }
 
 std::vector< std::shared_ptr<Value> > Typing::type(

@@ -5,7 +5,9 @@ using namespace LuaLibs;
 
 void Error::include(Interpreter* interp) {
     interp->global.set("error", std::make_shared<LuaValue::Function>((cxx_func) &error));
+    interp->cxx_funcnames[(cxx_func) &error] = "Error::error";
     interp->global.set("pcall", std::make_shared<LuaValue::Function>((cxx_func) &pcall));
+    interp->cxx_funcnames[(cxx_func) &pcall] = "Error::pcall";
 }
 
 std::vector< std::shared_ptr<Value> > Error::error (

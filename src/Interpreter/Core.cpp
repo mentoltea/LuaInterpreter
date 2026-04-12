@@ -822,6 +822,11 @@ void Executioner::raw_call(
     #endif
 
     if (func->func) {
+        if (g->cxx_funcnames.contains(func->func)) {
+            callstack.push( g->cxx_funcnames.at(func->func) );
+        } else {
+            callstack.push( func->key() );
+        }
         // built-in function
         std::reverse(reversed_args.begin(), reversed_args.end());
         auto result = func->func(this, reversed_args);
@@ -841,6 +846,8 @@ void Executioner::raw_call(
                 }
             }
         }
+
+        callstack.pop( );
     } else {
         callstack.push(func->label);
         to_return.push(return_size);
