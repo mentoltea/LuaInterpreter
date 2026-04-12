@@ -63,7 +63,16 @@ bool Interpreter::run() {
         for (auto &w: workers) {
             if (w->running) {
                 end = false;
-                w->execute();
+                try {
+                    w->execute();
+                } catch (std::runtime_error& e) {
+                    std::cout << "Uncaught exception " << e.what() << std::endl;
+                    while (!w->callstack.empty()) {
+                        std::cout << "From " << w->callstack.top() << std::endl;
+                        w->callstack.pop();
+                    }
+                    return false;
+                }
                 break;
             }
         }
