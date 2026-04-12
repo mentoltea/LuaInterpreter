@@ -5,6 +5,7 @@
 #include "generated/Lua55GrammarParser.h"
 #include "generated/Lua55GrammarListener.h"
 #include "Compiler.h"
+#include <iomanip>
 
 using namespace LuaInterpreter;
 using namespace LuaLibs;
@@ -112,7 +113,7 @@ void LuaInterpreter::LuaLibs::compile_and_add_extension(
         << normal_color 
     << std::endl;
     for (size_t i=0; i<interp->program.size(); i++) {
-        std::cout << i << ": " << interp->program[i] << std::endl;
+        std::cout << std::setw(4) << i << ": " << interp->program[i] << std::endl;
     }
     #endif
 

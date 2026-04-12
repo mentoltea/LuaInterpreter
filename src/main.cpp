@@ -4,6 +4,7 @@
 #include "generated/Lua55GrammarListener.h"
 #include "Compiler.h"
 #include "Interpreter.h"
+#include <iomanip>
 
 std::string red_color = "\e[31m";
 std::string green_color = "\e[32m";
@@ -91,7 +92,7 @@ int main(int argc, char** argv) {
     << std::endl;
 
     for (size_t i=0; i<bytecode.size(); i++) {
-        std::cout << i << ": " << bytecode[i] << std::endl;
+        std::cout << std::setw(4) << i << ": " << bytecode[i] << std::endl;
     }
 
     std::cout 
