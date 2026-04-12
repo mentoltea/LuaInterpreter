@@ -68,11 +68,6 @@ public:
     static std::vector< std::shared_ptr<Value> > frexp(Executioner* exec, std::vector< std::shared_ptr<Value> > &args); 
 
     
-    // The float value HUGE_VAL, a value greater than any other numeric value.
-    // math.huge
-    static std::vector< std::shared_ptr<Value> > huge(Executioner* exec, std::vector< std::shared_ptr<Value> > &args); 
-
-    
     // Returns m2e, where e is an integer.
     // math.ldexp (m, e)
     static std::vector< std::shared_ptr<Value> > ldexp(Executioner* exec, std::vector< std::shared_ptr<Value> > &args); 
@@ -87,28 +82,15 @@ public:
     // math.max (x, ···)
     static std::vector< std::shared_ptr<Value> > max(Executioner* exec, std::vector< std::shared_ptr<Value> > &args); 
 
-    // An integer with the maximum value for an integer.
-    // math.maxinteger
-    static std::vector< std::shared_ptr<Value> > maxinteger(Executioner* exec, std::vector< std::shared_ptr<Value> > &args); 
-
     
     // Returns the argument with the minimum value, according to the Lua operator <.
     // math.min (x, ···)
     static std::vector< std::shared_ptr<Value> > min(Executioner* exec, std::vector< std::shared_ptr<Value> > &args); 
 
-    // An integer with the minimum value for an integer.
-    // math.mininteger
-    static std::vector< std::shared_ptr<Value> > mininteger(Executioner* exec, std::vector< std::shared_ptr<Value> > &args); 
-
     
     // Returns the integral part of x and the fractional part of x. Its second result is always a float.
     // math.modf (x)
     static std::vector< std::shared_ptr<Value> > modf(Executioner* exec, std::vector< std::shared_ptr<Value> > &args); 
-
-    
-    // The value of π.
-    // math.pi
-    static std::vector< std::shared_ptr<Value> > pi(Executioner* exec, std::vector< std::shared_ptr<Value> > &args); 
 
     
     // Converts the angle x from degrees to radians.

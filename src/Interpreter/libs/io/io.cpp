@@ -6,6 +6,9 @@ using namespace LuaLibs;
 void IO::include(Interpreter* interp) {
     auto table = std::make_shared<LuaValue::Table>();
 
+    interp->global.set("print"  , std::make_shared< LuaValue::Function >( (cxx_func) &print));
+    interp->cxx_funcnames[(cxx_func) &print] = "IO::print";
+
     table->set("close"  , std::make_shared< LuaValue::Function >( (cxx_func) &close));
     interp->cxx_funcnames[(cxx_func) &close] = "IO::close";
     table->set("flush"  , std::make_shared< LuaValue::Function >( (cxx_func) &flush));
@@ -492,4 +495,21 @@ std::vector< std::shared_ptr<Value> > IO::write (
 ) {
     if (_output) return File(_output).write(exec, args);
     else return File(std::cout).write(exec, args);
+}
+
+std::vector< std::shared_ptr<Value> > IO::print (
+    Executioner* exec,
+    std::vector< std::shared_ptr<Value> > &args
+) {
+    File file(std::cout);
+    size_t N = args.size();
+    for (size_t i=0; i<N; i++) {
+        std::vector< std::shared_ptr<Value> > temp = { args[i] };
+        file.write(exec, temp);
+        if (i != N-1) {
+            std::cout << " ";
+        }
+    }
+    std::cout << "\n";
+    return {};
 }

@@ -88,17 +88,13 @@ void Math::include(Interpreter* interp) {
     interp->cxx_funcnames[(cxx_func) &ult] = "Math::ult";
 
 
-    table->set("huge",  std::make_shared<Function>((cxx_func)&huge));
-    interp->cxx_funcnames[(cxx_func) &huge] = "Math::huge";
+    table->set("huge",  std::make_shared<Number>(HUGE_VAL));
 
-    table->set("pi",    std::make_shared<Function>((cxx_func)&pi));
-    interp->cxx_funcnames[(cxx_func) &pi] = "Math::pi";
+    table->set("pi",    std::make_shared<Number>((std::float64_t) std::numbers::pi));
 
-    table->set("maxinteger",    std::make_shared<Function>((cxx_func)&maxinteger));
-    interp->cxx_funcnames[(cxx_func) &maxinteger] = "Math::maxinteger";
+    table->set("maxinteger",    std::make_shared<Number>((int64_t)std::numeric_limits<int64_t>::max()));
 
-    table->set("mininteger",    std::make_shared<Function>((cxx_func)&mininteger));
-    interp->cxx_funcnames[(cxx_func) &mininteger] = "Math::mininteger";
+    table->set("mininteger",    std::make_shared<Number>((int64_t)std::numeric_limits<int64_t>::min()));
 
 
     interp->global.set("math", table);
@@ -294,11 +290,6 @@ std::vector<std::shared_ptr<Value>> Math::frexp(Executioner* exec, std::vector<s
     };
 }
 
-// The float value HUGE_VAL
-// math.huge
-std::vector<std::shared_ptr<Value>> Math::huge(Executioner* exec, std::vector<std::shared_ptr<Value>>& args) {
-    return { std::make_shared<Number>(HUGE_VAL) };
-}
 
 // Returns m * 2^e
 // math.ldexp (m, e)
@@ -373,12 +364,6 @@ std::vector<std::shared_ptr<Value>> Math::max(Executioner* exec, std::vector<std
     return { std::make_shared<Number>(*max_num) };
 }
 
-// An integer with the maximum value for an integer.
-// math.maxinteger
-std::vector<std::shared_ptr<Value>> Math::maxinteger(Executioner* exec, std::vector<std::shared_ptr<Value>>& args) {
-    return { std::make_shared<Number>((int64_t)std::numeric_limits<int64_t>::max()) };
-}
-
 // Returns the argument with the minimum value
 // math.min (x, ···)
 std::vector<std::shared_ptr<Value>> Math::min(Executioner* exec, std::vector<std::shared_ptr<Value>>& args) {
@@ -404,12 +389,6 @@ std::vector<std::shared_ptr<Value>> Math::min(Executioner* exec, std::vector<std
     return { std::make_shared<Number>(*min_num) };
 }
 
-// An integer with the minimum value for an integer.
-// math.mininteger
-std::vector<std::shared_ptr<Value>> Math::mininteger(Executioner* exec, std::vector<std::shared_ptr<Value>>& args) {
-    return { std::make_shared<Number>((int64_t)std::numeric_limits<int64_t>::min()) };
-}
-
 // Returns the integral part and the fractional part of x.
 // math.modf (x)
 std::vector<std::shared_ptr<Value>> Math::modf(Executioner* exec, std::vector<std::shared_ptr<Value>>& args) {
@@ -429,12 +408,6 @@ std::vector<std::shared_ptr<Value>> Math::modf(Executioner* exec, std::vector<st
         std::make_shared<Number>((int64_t)intpart),
         std::make_shared<Number>((std::float64_t)fracpart)
     };
-}
-
-// The value of π.
-// math.pi
-std::vector<std::shared_ptr<Value>> Math::pi(Executioner* exec, std::vector<std::shared_ptr<Value>>& args) {
-    return { std::make_shared<Number>(std::numbers::pi) };
 }
 
 // Converts the angle x from degrees to radians.

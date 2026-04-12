@@ -45,6 +45,7 @@ Interpreter::Interpreter(
     LuaLibs::Typing::include(this);
     LuaLibs::Error::include(this);
     LuaLibs::Math::include(this);
+    LuaLibs::StringLib::include(this);
     
     collect_labels();
     auto entry = std::make_shared<LuaValue::Function>("_start", 0, "varg");
@@ -368,6 +369,7 @@ void Executioner::execute(Instruction* inst) {
     }
 
     #ifdef INTERPRETER_DEBUG
+    std::cout << "funccall: " << callstack.top() << std::endl;
     std::cout << "#stacks: " << stacks.size() << std::endl;
     if (!stacks.empty()) {
         auto topstack = stacks.top();
@@ -700,16 +702,29 @@ void Executioner::METAINDEX(Instruction *inst) {
     auto type = object->type();
     if (
         type != Value::Type::TABLE &&
-        type != Value::Type::USERDATA
+        type != Value::Type::USERDATA &&
+        type != Value::Type::STRING
     ) {
         throw std::runtime_error("Interpretator: Metaindexing of incompatible type");
     }
 
+    if (type == Value::Type::STRING) {
+        auto string = get("string");
+        if (!string || string->type() != Value::Type::TABLE) {
+            throw std::runtime_error("Interpretator: string must be a library");
+        }
+        auto table = std::static_pointer_cast<LuaValue::Table>(string);
+        
+        auto v = table->at(inst->metafield);
+        if (v) stacks.top().push(v);
+        else stacks.top().push( std::make_shared<LuaValue::Nil>() );
+    } else
     if (type == Value::Type::TABLE) {
         auto v = ((LuaValue::Table*) object.get())->meta.at(inst->metafield);
         if (v) stacks.top().push(v);
         else stacks.top().push( std::make_shared<LuaValue::Nil>() );
-    } else {
+    } else 
+    {
         auto v = ((LuaValue::Userdata*) object.get())->meta.at(inst->metafield);
         if (v) stacks.top().push(v);
         else stacks.top().push( std::make_shared<LuaValue::Nil>() );
@@ -1171,7 +1186,22 @@ void Executioner::NEQ(Instruction *inst) {
 }
 
 void Executioner::CONCAT(Instruction *inst) {
-    throw std::runtime_error("Interpreter: Concat is not implemented yet");
+    auto arg2 = pop_top();
+    auto arg1 = pop_top();
+
+    if (
+        arg1->type() != Value::Type::STRING || 
+        arg2->type() != Value::Type::STRING 
+    ) {
+        throw std::runtime_error("Interpreter: Arbitary concat not supported yet");
+    }
+
+    auto str1 = std::static_pointer_cast<LuaValue::String>(arg1);
+    auto str2 = std::static_pointer_cast<LuaValue::String>(arg2);
+
+    stacks.top().push(
+        std::make_shared<LuaValue::String>( str1->value + str2->value )
+    ); 
 }
 
 void Executioner::ADD(Instruction *inst) {

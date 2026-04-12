@@ -132,6 +132,7 @@ std::vector< Instruction > Compiler::compile_function(FunctionToCompile &func) {
     // scopes_put.top()--;
 
     // на случай, если нет return
+    result.push_back( Instruction {.type = Instruction::Type::PUT_STACK} );
     result.push_back( Instruction {.type = Instruction::Type::PUT_NIL} );
     result.push_back( Instruction {.type = Instruction::Type::RET, .N = 1} );
 

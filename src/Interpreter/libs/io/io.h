@@ -140,6 +140,11 @@ class IO {
         Executioner* exec,
         std::vector< std::shared_ptr<Value> > &args
     );
+
+    static std::vector< std::shared_ptr<Value> > print (
+        Executioner* exec,
+        std::vector< std::shared_ptr<Value> > &args
+    );
 };
 
 
