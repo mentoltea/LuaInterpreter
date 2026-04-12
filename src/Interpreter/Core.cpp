@@ -44,6 +44,7 @@ Interpreter::Interpreter(
     LuaLibs::Map::include(this);
     LuaLibs::Typing::include(this);
     LuaLibs::Error::include(this);
+    LuaLibs::Math::include(this);
     
     collect_labels();
     auto entry = std::make_shared<LuaValue::Function>("_start", 0, "varg");

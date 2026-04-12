@@ -16,6 +16,7 @@
 #include "libs/iterators/map.h"
 #include "libs/typing/type.h"
 #include "libs/error/error.h"
+#include "libs/math/math.h"
 
 namespace LuaInterpreter {
 
