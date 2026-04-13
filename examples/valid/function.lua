@@ -23,14 +23,14 @@ local mn, mx = min_max(5, 2, 8)  -- mn=2, mx=8
 
 -- Функция с переменным числом аргументов (через arg)
 function join(separator, ...)
-    local result = varg[1]
-    for i = 2, varg.n do
-        result = result .. separator .. arg[i]
+    local result = varg[0]
+    for i = 1, (#varg - 1) do
+        result = result .. separator .. varg[i]
     end
     return result
 end
-
-print(join(", ", "apple", "banana", "orange"))  -- apple, banana, orange
+-- (nil)()
+print(join(", ", "apple", "banana", "orange"));  -- apple, banana, orange
 
 -- Рекурсивная функция
 function factorial(n)
@@ -46,7 +46,7 @@ obj.subobj = {
     x = 10
 }
 function obj.subobj:print() 
-    print("x = ", x)
+    print("x =", self.x)
 end
 
 obj.subobj:print()

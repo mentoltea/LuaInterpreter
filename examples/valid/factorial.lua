@@ -20,5 +20,5 @@ function factorial_iterative(n)
 end
 
 local N = 4
-io.write("\e[31m", N, " factorial (recursive): ", factorial_recursive(N), "\e[m\n")
-io.write("\e[31m", N, " factorial (iterative): ", factorial_iterative(N), "\e[m\n")
+io.write(N, " factorial (recursive): ", factorial_recursive(N), "\n")
+io.write(N, " factorial (iterative): ", factorial_iterative(N), "\n")

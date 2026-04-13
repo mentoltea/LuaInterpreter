@@ -18,6 +18,7 @@
 #include "libs/error/error.h"
 #include "libs/math/math.h"
 #include "libs/string/string.h"
+#include "libs/coroutine/coroutine.h"
 
 namespace LuaInterpreter {
 
@@ -30,6 +31,8 @@ struct Scope {
 
 class Interpreter {
 public:
+    size_t next_tid = 0;
+
     Scope global;
     std::shared_ptr<Value> get(const std::string &name);
     void set(const std::string &name, std::shared_ptr<Value> value);
@@ -55,6 +58,7 @@ public:
 struct Executioner {
 public:
     Interpreter *g; 
+    size_t tid;
     size_t ip;
     std::stack < size_t > ret_addr;
 
@@ -75,22 +79,26 @@ public:
     static constexpr int ALL = -1;
 
     bool running = true;
+    bool suspended = false;
     bool stop = false;
+    std::shared_ptr< LuaValue::Thread > tied_to = nullptr;
 
     std::vector< std::shared_ptr<Value> > rets;
 
     Executioner(
         Interpreter *g,
+        size_t tid,
         std::shared_ptr<LuaValue::Function> entry,
         std::vector< std::shared_ptr<Value> > args
     );
 
     void execute();
 
+    void release_turn();
+
     Instruction* fetch_instruction();
 
     void execute(Instruction* inst);
-
 
     static std::string type_of(std::shared_ptr< Value > value);
 

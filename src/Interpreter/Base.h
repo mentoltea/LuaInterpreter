@@ -19,8 +19,9 @@ class Value;
 // string : one common metatable for all strings
 // nil, boolean, number, thread, function : NO table
 class Metatable {
-    std::unordered_map< std::string , std::shared_ptr<Value> > data;
 public:
+    std::unordered_map< std::string , std::shared_ptr<Value> > data;
+    Metatable();
     std::shared_ptr<Value> at(const std::string &key);
     void set(const std::string &key, std::shared_ptr<Value> value);
 };

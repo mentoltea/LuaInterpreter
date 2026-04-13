@@ -192,7 +192,7 @@ std::string Function::key() const {
 }
 
 
-
+Thread::Thread(Executioner* thread): thread(thread) {}
 Thread::~Thread() = default;
 Value::Type Thread::type() const { return Type::THREAD; };
 
@@ -328,29 +328,36 @@ void Table::set(std::shared_ptr<Value> key, std::shared_ptr<Value> value) {
 }
 
 std::shared_ptr<Value> Table::at(size_t key) {
-    return int_table.at(key);
+    if (int_table.contains(key)) return int_table.at(key);
+    return nullptr;
 }
 void Table::set(size_t key, std::shared_ptr<Value> value) {
     int_table[key] = value;
 }
 
 std::shared_ptr<Value> Table::at(const std::string &key) {
-    return string_table.at(key);
+    if (string_table.contains(key)) return string_table.at(key);
+    return nullptr;
 }
 void Table::set(const std::string &key, std::shared_ptr<Value> value) {
     string_table[key] = value;
 }
 
 std::shared_ptr<Value> Table::at(const String &key) {
-    return string_table.at(key.value);
+    if (string_table.contains(key.value)) return string_table.at(key.value);
+    return nullptr;
 }
 void Table::set(const String &key, std::shared_ptr<Value> value) {
     string_table[key.value] = value;
 }
 
 std::shared_ptr<Value> Table::at(const Number &key) {
-    if (key.kind == Number::Kind::INT) return int_table.at(key.integer);
-    return int_table.at( std::round( key.floating ) );
+    if (key.kind == Number::Kind::INT) {
+        if (int_table.contains(key.integer)) return int_table.at(key.integer);
+        return nullptr;
+    }
+    if (int_table.contains(std::round( key.floating ))) return int_table.at( std::round( key.floating ) );
+    return nullptr;
 }
 void Table::set(const Number &key, std::shared_ptr<Value> value) {
     if (key.kind == Number::Kind::INT) int_table[key.integer] = value;
@@ -358,14 +365,16 @@ void Table::set(const Number &key, std::shared_ptr<Value> value) {
 }
 
 std::shared_ptr<Value> Table::at(const Function &key) {
-    return func_table.at(key.key());
+    if (func_table.contains(key.key())) return func_table.at(key.key());
+    return nullptr;
 }
 void Table::set(const Function &key, std::shared_ptr<Value> value) {
     func_table[key.key()] = value;
 }
 
 std::shared_ptr<Value> Table::at(const Userdata &key) {
-    return data_table.at(key.data);
+    if (data_table.contains(key.data)) return data_table.at(key.data);
+    return nullptr;
 }
 void Table::set(const Userdata &key, std::shared_ptr<Value> value) {
     data_table[key.data] = value;

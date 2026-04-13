@@ -97,8 +97,11 @@ public:
 
 class Thread: public Value {
 public:
+    Thread(Executioner* thread);
     ~Thread();
     virtual Type type() const override;
+    Executioner* thread;
+    std::vector< Executioner* > waiters;
 };
 
 class Userdata: public Value {

@@ -390,7 +390,7 @@ std::vector< Instruction > Compiler::compile_statement(LuaAST::Statement *statem
                         .type = Instruction::Type::PUT_FUNC,
                         .name = st->body->variadic_param.value_or("varg"),
                         .label = funcname,
-                        .N = st->body->params.size(),
+                        .N = st->body->params.size() + !name->kind.empty(),
                     }
                 );
 

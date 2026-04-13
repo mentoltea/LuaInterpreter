@@ -1,3 +1,11 @@
+function table_length(t)
+    local i = 1
+    while t[i] ~= nil do
+        i = i + 1
+    end
+    return i - 1
+end
+
 -- Стек на таблице
 Stack = {}
 
@@ -81,9 +89,3 @@ for i = 1, table_length(primes) do
     io.write(primes[i], " ")
 end
 io.write("\n")
-
-local func = function (a) 
-    io.write("lambda func: ", a)
-end
-
-func()

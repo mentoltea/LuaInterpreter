@@ -46,12 +46,14 @@ Interpreter::Interpreter(
     LuaLibs::Error::include(this);
     LuaLibs::Math::include(this);
     LuaLibs::StringLib::include(this);
+    LuaLibs::Coroutine::include(this);
     
     collect_labels();
     auto entry = std::make_shared<LuaValue::Function>("_start", 0, "varg");
     workers.push_back(
         std::make_unique<Executioner>(
             this, 
+            next_tid++,
             entry, 
             std::vector< std::shared_ptr<Value> > ()
         )
@@ -63,12 +65,13 @@ bool Interpreter::run() {
     while (!end) { 
         end = true;
         for (auto &w: workers) {
-            if (w->running) {
+            if (w && w->running && !w->suspended) {
                 end = false;
                 try {
                     w->execute();
                 } catch (std::runtime_error& e) {
-                    std::cout << "Uncaught exception " << e.what() << std::endl;
+                    std::cout << "Uncaught exception in thread " << w->tid << ":" << std::endl;
+                    std::cout << e.what() << std::endl;
                     while (!w->callstack.empty()) {
                         std::cout << "From " << w->callstack.top() << std::endl;
                         w->callstack.pop();
@@ -105,29 +108,53 @@ void Executioner::set(const std::string &name, std::shared_ptr<Value> value) {
 
 Executioner::Executioner(
     Interpreter *g,
+    size_t tid,
     std::shared_ptr<LuaValue::Function> entry,
     std::vector< std::shared_ptr<Value> > args
 ) {
     this->g = g;
     this->running = true;
+    this->tid = tid;
     // 1 scope
     scopes.push( { Scope{} } );
     stacks.push({});
-
+    
     if (entry->func) {
         rets = entry->func(this, args);
         running = false;
+        stop = true;
+        release_turn();
     } else {
         this->ip = g->labels.at(entry->label);
         callstack.push(entry->label);
+        for (auto &arg: args) {
+            stacks.top().push(arg);
+        }
     }
 }
 
 void Executioner::execute() {
     stop = false;
-    while (running && !stop) {
+    while (running && !suspended && !stop) {
         Instruction* inst = fetch_instruction();
         execute(inst);
+    }
+}
+
+void Executioner::release_turn() {
+    stop = true;
+    if (tied_to) {
+        for (auto waiter: tied_to->waiters) {
+            // true - success
+            waiter->stacks.top().push( std::make_shared<LuaValue::Boolean>( true ) );
+            
+            for (auto &r: rets) {
+                waiter->stacks.top().push( r );
+            }
+            
+            if (waiter->suspended) waiter->suspended = false;
+        }
+        tied_to->waiters.clear();
     }
 }
 
@@ -369,6 +396,7 @@ void Executioner::execute(Instruction* inst) {
     }
 
     #ifdef INTERPRETER_DEBUG
+    std::cout << "tid: " << tid << std::endl;
     std::cout << "funccall: " << callstack.top() << std::endl;
     std::cout << "#stacks: " << stacks.size() << std::endl;
     if (!stacks.empty()) {
@@ -679,8 +707,10 @@ void Executioner::INDEX(Instruction *inst) {
     if (value->type() != Value::Type::TABLE) {
         throw std::runtime_error("Interpretator: Indexing of non-table type");
     }
-    auto v = ((LuaValue::Table*) value.get())->at(inst->field);
-    if (v) stacks.top().push(v);
+    auto table = std::static_pointer_cast<LuaValue::Table>(value);
+    if (table->string_table.contains(inst->field)) {
+        stacks.top().push( table->at(inst->field) );
+    }
     else stacks.top().push( std::make_shared<LuaValue::Nil>() );
 }
 
@@ -845,7 +875,16 @@ void Executioner::raw_call(
         // built-in function
         std::reverse(reversed_args.begin(), reversed_args.end());
         auto result = func->func(this, reversed_args);
-        if (result.empty()) result.push_back( std::make_shared<LuaValue::Nil>() );
+
+        if (result.empty()) {
+            // for coroutine compliance
+            if (
+                func->func != &LuaLibs::Coroutine::resume &&
+                func->func != &LuaLibs::Coroutine::yield
+            ) {
+                 result.push_back( std::make_shared<LuaValue::Nil>() );
+            }
+        }
         if (return_size == ALL) {
             for (auto &r: result) {
                 stacks.top().push(r);
@@ -886,13 +925,13 @@ void Executioner::raw_call(
                 );
             }
         }
-        std::shared_ptr<LuaValue::Table> varg(new LuaValue::Table);
+        auto varg = std::make_shared<LuaValue::Table>();
         if (argsize > (int)func->arg_N) {
             int diff = argsize - func->arg_N;
             for (int i=0; i<diff; i++) {
-                // argsize - N - i
-                int idx = diff - i;
-                varg->set(idx, reversed_args[idx]);
+                // argsize - N - i - 1
+                int idx = diff - i - 1;
+                varg->set(i, reversed_args[idx]);
             }
         }
         scopes.top().back().set(func->varg, varg);
@@ -1004,6 +1043,8 @@ void Executioner::RET(Instruction *inst) {
         rets = values;
         running = false;
         stop = true;
+        
+        release_turn();
         return;
     }
     callstack.pop();
