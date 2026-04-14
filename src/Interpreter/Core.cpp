@@ -1231,15 +1231,66 @@ void Executioner::CONCAT(Instruction *inst) {
     auto arg2 = pop_top();
     auto arg1 = pop_top();
 
-    if (
-        arg1->type() != Value::Type::STRING || 
-        arg2->type() != Value::Type::STRING 
-    ) {
-        throw std::runtime_error("Interpreter: Arbitary concat not supported yet");
+    std::shared_ptr<LuaValue::String> str1 = nullptr;
+    std::shared_ptr<LuaValue::String> str2 = nullptr;
+
+    switch (arg1->type()) {
+        case Value::Type::STRING: {
+            str1 = std::static_pointer_cast<LuaValue::String>(arg1);
+        } break;
+        case Value::Type::NUMBER: {
+            auto num = std::static_pointer_cast<LuaValue::Number>(arg1);
+            if (num->kind == LuaValue::Number::Kind::INT) {
+                str1 = std::make_shared<LuaValue::String>( std::to_string(num->integer) );
+            } else {
+                str1 = std::make_shared<LuaValue::String>( std::to_string((double) num->floating) );
+            }
+        } break;
+        case Value::Type::BOOLEAN: {
+            auto bl = std::static_pointer_cast<LuaValue::Boolean>(arg1);
+            if (bl->value) {
+                str1 = std::make_shared<LuaValue::String>( "true" );
+            } else {
+                str1 = std::make_shared<LuaValue::String>( "false" );
+            }
+        } break;
+        case Value::Type::NIL: {
+            str1 = std::make_shared<LuaValue::String>( "nil" );
+        } break;
+
+        default: break;
     }
 
-    auto str1 = std::static_pointer_cast<LuaValue::String>(arg1);
-    auto str2 = std::static_pointer_cast<LuaValue::String>(arg2);
+    switch (arg2->type()) {
+        case Value::Type::STRING: {
+            str2 = std::static_pointer_cast<LuaValue::String>(arg2);
+        } break;
+        case Value::Type::NUMBER: {
+            auto num = std::static_pointer_cast<LuaValue::Number>(arg2);
+            if (num->kind == LuaValue::Number::Kind::INT) {
+                str2 = std::make_shared<LuaValue::String>( std::to_string(num->integer) );
+            } else {
+                str2 = std::make_shared<LuaValue::String>( std::to_string((double) num->floating) );
+            }
+        } break;
+        case Value::Type::BOOLEAN: {
+            auto bl = std::static_pointer_cast<LuaValue::Boolean>(arg1);
+            if (bl->value) {
+                str2 = std::make_shared<LuaValue::String>( "true" );
+            } else {
+                str2 = std::make_shared<LuaValue::String>( "false" );
+            }
+        } break;
+        case Value::Type::NIL: {
+            str2 = std::make_shared<LuaValue::String>( "nil" );
+        } break;
+
+        default: break;
+    }
+    
+    if (!str1 || !str2) {
+        throw std::runtime_error("Interpreter: Arbitary concat not supported yet");
+    }
 
     stacks.top().push(
         std::make_shared<LuaValue::String>( str1->value + str2->value )

@@ -250,11 +250,11 @@ CONST: 'const' ;
 
 NUMBER: (MINUS_SIGN)? [0-9]+ ('.' [0-9]+)? ;
 STRING: '"' ( '\\"' | ~["\r\n] )* '"' ;
-UNTERMINATED_STRING: '"' ( '\\"' | ~["\r\n] )* 
-    { 
-        throw new RuntimeException("Syntax error: unterminated string at line " + getLine());
-    }
-;
+// UNTERMINATED_STRING: '"' ( '\\"' | ~["\r\n] )* 
+//     { 
+//         throw new RuntimeException("Syntax error: unterminated string at line " + getLine());
+//     }
+// ;
 
 ID: [a-zA-Z_][a-zA-Z0-9_]* ;
 WS: [ \t\r\n]+ -> skip;

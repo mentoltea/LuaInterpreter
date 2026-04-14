@@ -1,3 +1,6 @@
+#ifndef LISTENER_H
+#define LISTENER_H
+
 #include "AST.h"
 #include "generated/Lua55GrammarBaseListener.h"
 #include <stack>
@@ -116,3 +119,23 @@ class Lua55Listener: public Lua55GrammarBaseListener {
     
     virtual void exitName(Lua55GrammarParser::NameContext * ctx) override;
 };
+
+class ErrorCountListener : public antlr4::BaseErrorListener {
+public:
+    void syntaxError(antlr4::Recognizer* recognizer, 
+                     antlr4::Token* offendingSymbol, 
+                     size_t line, 
+                     size_t charPositionInLine, 
+                     const std::string& msg, 
+                     std::exception_ptr e) override;
+    
+    bool hasErrors() const;
+    size_t getErrorCount() const;
+    const std::vector<std::string>& getErrors() const;
+    
+private:
+    size_t errorCount = 0;
+    std::vector<std::string> errors;
+};
+
+#endif // LISTENER_H

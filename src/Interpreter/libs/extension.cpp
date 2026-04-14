@@ -32,8 +32,27 @@ void LuaInterpreter::LuaLibs::compile_and_add_extension(
     Lua55GrammarLexer lexer(&stream);    
     antlr4::CommonTokenStream tokens(&lexer);
     
-    Lua55GrammarParser parser(&tokens);    
+    Lua55GrammarParser parser(&tokens);   
+    
+    parser.removeErrorListeners();
+    ErrorCountListener errorer;
+    parser.addErrorListener(&errorer);
+
+
     antlr4::tree::ParseTree* tree = parser.prog();
+
+    if (errorer.hasErrors()) {
+        for (auto &e: errorer.getErrors()) {
+            std::cerr << e << std::endl;
+        }
+        std::cerr
+            << red_color
+            << "Parsing error"
+            << normal_color 
+        << std::endl;
+        throw std::runtime_error("Extension compilation error");
+    }
+
     #ifdef INTERPRETER_DEBUG
     std::cout
         << std::endl 

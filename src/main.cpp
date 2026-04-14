@@ -32,7 +32,24 @@ int main(int argc, char** argv) {
     antlr4::CommonTokenStream tokens(&lexer);
     
     Lua55GrammarParser parser(&tokens);    
+
+    parser.removeErrorListeners();
+    ErrorCountListener errorer;
+    parser.addErrorListener(&errorer);
+
     antlr4::tree::ParseTree* tree = parser.prog();
+
+    if (errorer.hasErrors()) {
+        for (auto &e: errorer.getErrors()) {
+            std::cerr << e << std::endl;
+        }
+        std::cerr
+            << red_color
+            << "Parsing error"
+            << normal_color 
+        << std::endl;
+        return 1;
+    }
     
     // std::cout << tree->toStringTree() << std::endl;
     std::cout
@@ -114,7 +131,7 @@ int main(int argc, char** argv) {
     auto result = interp.run();
 
     if (!result) {
-        std::cout 
+        std::cerr 
             << std::endl 
             << red_color
             << "Interpretation ended with an error"

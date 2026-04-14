@@ -917,3 +917,18 @@ void Lua55Listener::exitVar_tail(Lua55GrammarParser::Var_tailContext * ctx){
 void Lua55Listener::exitName(Lua55GrammarParser::NameContext * ctx){ 
     // std::cout << "Lua55Listener::exitName(" << ctx->ID()->toString() << ")" << std::endl;
 }
+
+void ErrorCountListener::syntaxError(antlr4::Recognizer* recognizer, 
+                     antlr4::Token* offendingSymbol, 
+                     size_t line, 
+                     size_t charPositionInLine, 
+                     const std::string& msg, 
+                     std::exception_ptr e) {
+    errorCount++;
+    errors.push_back("line " + std::to_string(line) + ":" + 
+                        std::to_string(charPositionInLine) + " " + msg);
+}
+
+bool ErrorCountListener::hasErrors() const { return errorCount > 0; }
+size_t ErrorCountListener::getErrorCount() const { return errorCount; }
+const std::vector<std::string>& ErrorCountListener::getErrors() const { return errors; }
