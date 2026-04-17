@@ -435,7 +435,7 @@ std::vector< std::shared_ptr<Value> > IO::open (
     if (real_mode & std::ios::in) _input = file->file;
     if (real_mode & std::ios::out) _output = file->file;
 
-    return {  };
+    return { file };
 }
 
 std::vector< std::shared_ptr<Value> > IO::output (
