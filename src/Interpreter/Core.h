@@ -79,7 +79,19 @@ public:
     static constexpr int ALL = -1;
 
     bool running = true;
-    bool suspended = false;
+    bool suspended_coroutine = false;
+
+    struct Catch {
+        size_t ip;
+
+        size_t ret_addr_size;
+        size_t scopes_size;
+        size_t stacks_size;
+        size_t callstack_size;
+        size_t to_return_size;
+    };
+    std::stack< Catch > pcalls;
+
     bool stop = false;
     std::shared_ptr< LuaValue::Thread > tied_to = nullptr;
 
@@ -105,6 +117,12 @@ public:
     // Others: switch value->type()
     // Userdata: metatable[ "__type" ] = type
     static bool is_type_of(std::shared_ptr< Value > value, const std::string& type);
+
+    void raw_lua_call(
+        std::shared_ptr<LuaValue::Function> func,
+        std::vector< std::shared_ptr<Value> > & reversed_args,
+        int return_size
+    );
 
     void raw_call(
         std::shared_ptr<LuaValue::Function> func,

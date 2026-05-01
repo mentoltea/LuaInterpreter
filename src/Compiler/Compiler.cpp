@@ -37,7 +37,7 @@ std::string unescapeString(const std::string& input) {
 
 size_t Compiler::get_uid() { return uid++; }
 std::string Compiler::get_ustr() { 
-    return "__uid_" + std::to_string(get_uid()) + "_"; 
+    return "uid_" + std::to_string(get_uid()) + "_"; 
 }
 
 std::string Compiler::get_prefix() { 
@@ -527,8 +527,8 @@ std::vector< Instruction > Compiler::compile_statement(LuaAST::Statement *statem
             */
             std::string prefix = get_prefix();
             std::string ustr = get_ustr();
-            std::string while_start = prefix + ustr + "__while_start"; 
-            std::string while_end = prefix + ustr + "__while_end";
+            std::string while_start = prefix + ustr + "while_start"; 
+            std::string while_end = prefix + ustr + "while_end";
             break_labels.push(while_end);
             scopes_put.push(0);
 
@@ -592,8 +592,8 @@ std::vector< Instruction > Compiler::compile_statement(LuaAST::Statement *statem
 
             std::string prefix = get_prefix();
             std::string ustr = get_ustr();
-            std::string repeat_start = prefix + ustr + "__repeat_start"; 
-            std::string repeat_end = prefix + ustr + "__repeat_end";
+            std::string repeat_start = prefix + ustr + "repeat_start"; 
+            std::string repeat_end = prefix + ustr + "repeat_end";
             break_labels.push(repeat_end);
             scopes_put.push(0);
 
@@ -670,7 +670,7 @@ std::vector< Instruction > Compiler::compile_statement(LuaAST::Statement *statem
 
             std::string prefix = get_prefix();
             std::string ustr = get_ustr();
-            std::string skip = prefix + ustr + "__if_skip_";
+            std::string skip = prefix + ustr + "if_skip_";
 
             // if
             auto exp = compile_expression( st->branch_if.first.get() , 1);
@@ -797,12 +797,12 @@ std::vector< Instruction > Compiler::compile_statement(LuaAST::Statement *statem
             std::string prefix = get_prefix();
             std::string ustr = get_ustr();
 
-            std::string var = prefix + ustr + "__numfor" + "__var";
-            std::string var_end = prefix + ustr + "__numfor" + "__var" + "__end";
-            std::string var_step = prefix + ustr + "__numfor" + "__var" + "__step";
+            std::string var = prefix + ustr + "numfor" + "__var";
+            std::string var_end = prefix + ustr + "numfor" + "__var" + "__end";
+            std::string var_step = prefix + ustr + "numfor" + "__var" + "__step";
 
-            std::string cond_label = prefix + ustr + "__numfor_cond";
-            std::string end_label = prefix + ustr + "__numfor_end";
+            std::string cond_label = prefix + ustr + "numfor_cond";
+            std::string end_label = prefix + ustr + "numfor_end";
             break_labels.push(end_label);
             scopes_put.push(0);
 
@@ -983,12 +983,12 @@ std::vector< Instruction > Compiler::compile_statement(LuaAST::Statement *statem
             std::string prefix = get_prefix();
             std::string ustr = get_ustr();
 
-            std::string cond_label = prefix + ustr + "__genfor" + "_cond";
-            std::string end_label = prefix + ustr + "__genfor" + "_end";
+            std::string cond_label = prefix + ustr + "genfor" + "_cond";
+            std::string end_label = prefix + ustr + "genfor" + "_end";
 
-            std::string var_var = prefix + ustr + "__genfor" + "__var";
-            std::string s_var = prefix + ustr + "__genfor" + "__s";
-            std::string f_var = prefix + ustr + "__genfor" + "__f";
+            std::string var_var = prefix + ustr + "genfor" + "__var";
+            std::string s_var = prefix + ustr + "genfor" + "__s";
+            std::string f_var = prefix + ustr + "genfor" + "__f";
             
             result.push_back( Instruction { .type = Instruction::Type::PUT_SCOPE } );
             scopes_put.top()++;
@@ -1279,7 +1279,7 @@ std::vector< Instruction > Compiler::compile_expression(
             LuaAST::FuncAnon* exp = (LuaAST::FuncAnon*) expression;
             stack_size = 1;
 
-            std::string funcname = get_prefix() + get_ustr() + "__lambda";
+            std::string funcname = get_prefix() + get_ustr() + "lambda";
             functions_to_compile.push( { funcname, exp->body.get() } );
 
             result.push_back( 

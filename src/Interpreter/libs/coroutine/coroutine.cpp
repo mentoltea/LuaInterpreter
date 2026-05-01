@@ -68,7 +68,7 @@ std::vector< std::shared_ptr<Value> > Coroutine::create (
         std::make_unique< Executioner >( g, g->next_tid++, func, std::vector< std::shared_ptr<Value> >())
     );
     auto new_thread = g->workers.back().get();
-    new_thread->suspended = true;
+    new_thread->suspended_coroutine = true;
 
     new_thread->tied_to = std::make_shared<Thread>(new_thread);
 
@@ -94,7 +94,7 @@ std::vector< std::shared_ptr<Value> > Coroutine::ready (
     if (args[0]->type() != Value::Type::THREAD) throw std::runtime_error("Coroutine::ready - expected thread");
     auto thread = std::static_pointer_cast<Thread>(args[0]);
 
-    return { std::make_shared<Boolean>( thread->thread->suspended ) }; 
+    return { std::make_shared<Boolean>( thread->thread->suspended_coroutine ) }; 
 }
 
 std::vector< std::shared_ptr<Value> > Coroutine::resume (
@@ -115,12 +115,12 @@ std::vector< std::shared_ptr<Value> > Coroutine::resume (
     }
 
     size_t N = args.size();
-    if (!thread->thread->suspended) {
+    if (!thread->thread->suspended_coroutine) {
         if (N > 0) {
             throw std::runtime_error("Coroutine::resume - cannot pass arguments to not suspended coroutine");
         }
     } else {
-        thread->thread->suspended = false;
+        thread->thread->suspended_coroutine = false;
     
         
         for (size_t i=1; i<N; i++) {
@@ -128,7 +128,7 @@ std::vector< std::shared_ptr<Value> > Coroutine::resume (
         }
     }
 
-    exec->suspended = true;
+    exec->suspended_coroutine = true;
     thread->waiters.push_back(exec);
 
     return { }; 
@@ -157,7 +157,7 @@ std::vector< std::shared_ptr<Value> > Coroutine::status (
     auto thread = std::static_pointer_cast<Thread>(args[0]);
 
     if (!thread->thread->running) return {std::make_shared<String>("dead")};
-    if (thread->thread->suspended) return {std::make_shared<String>("suspended")};
+    if (thread->thread->suspended_coroutine) return {std::make_shared<String>("suspended")};
     return {std::make_shared<String>("running")};
 }
 
@@ -210,7 +210,7 @@ std::vector< std::shared_ptr<Value> > Coroutine::yield (
 ) {
     exec->rets = args;
     exec->release_turn();
-    exec->suspended = true;
+    exec->suspended_coroutine = true;
 
     return {};
 }

@@ -65,18 +65,34 @@ bool Interpreter::run() {
     while (!end) { 
         end = true;
         for (auto &w: workers) {
-            if (w && w->running && !w->suspended) {
+            if (w && w->running && !w->suspended_coroutine) {
                 end = false;
                 try {
                     w->execute();
                 } catch (std::runtime_error& e) {
-                    std::cout << "Uncaught exception in thread " << w->tid << ":" << std::endl;
-                    std::cout << e.what() << std::endl;
-                    while (!w->callstack.empty()) {
-                        std::cout << "From " << w->callstack.top() << std::endl;
-                        w->callstack.pop();
+                    if (w->pcalls.empty()) {
+                        std::cout << "Uncaught exception in thread " << w->tid << ":" << std::endl;
+                        std::cout << e.what() << std::endl;
+                        while (!w->callstack.empty()) {
+                            std::cout << "From " << w->callstack.top() << std::endl;
+                            w->callstack.pop();
+                        }
+                        return false;
+                    } else {
+                        Executioner::Catch c = w->pcalls.top(); w->pcalls.pop();
+                        #ifdef INTERPRETER_DEBUG
+                        std::cout << "pcall caught exception: " << e.what() << std::endl;
+                        #endif
+                        while (w->ret_addr.size()    != c.ret_addr_size  ) w->ret_addr.pop();
+                        while (w->scopes.size()      != c.scopes_size    ) w->scopes.pop();
+                        while (w->stacks.size()      != c.stacks_size    ) w->stacks.pop();
+                        while (w->callstack.size()   != c.callstack_size ) w->callstack.pop();
+                        while (w->to_return.size()   != c.to_return_size ) w->to_return.pop();
+                        w->ip = c.ip;
+
+                        w->stacks.top().push( std::make_shared<LuaValue::Boolean>(false) );
+                        w->stacks.top().push( std::make_shared<LuaValue::String>(e.what()) );
                     }
-                    return false;
                 }
                 break;
             }
@@ -135,7 +151,7 @@ Executioner::Executioner(
 
 void Executioner::execute() {
     stop = false;
-    while (running && !suspended && !stop) {
+    while (running && !suspended_coroutine && !stop) {
         Instruction* inst = fetch_instruction();
         execute(inst);
     }
@@ -152,7 +168,7 @@ void Executioner::release_turn() {
                 waiter->stacks.top().push( r );
             }
             
-            if (waiter->suspended) waiter->suspended = false;
+            if (waiter->suspended_coroutine) waiter->suspended_coroutine = false;
         }
         tied_to->waiters.clear();
     }
@@ -852,6 +868,58 @@ void Executioner::LABEL(Instruction *inst) {
     (void) (inst);
 }
 
+void Executioner::raw_lua_call(
+    std::shared_ptr<LuaValue::Function> func,
+    std::vector< std::shared_ptr<Value> > & reversed_args,
+    int return_size
+) {
+    #ifdef INTERPRETER_DEBUG
+    std::cout << "[raw_lua_call]" << std::endl;
+    size_t i = 0;
+    for (auto it = reversed_args.rbegin(); it != reversed_args.rend(); it++) {
+        std::cout << i << ": " << *it << " " << type_of(*it) << std::endl;
+        i++;
+    }
+    std::cout << std::endl;
+    #endif
+
+    if (func->func) {
+        throw std::runtime_error("Calling raw_lua_call on Cxx function");
+    } 
+
+    callstack.push(func->label);
+    to_return.push(return_size);
+    // stacks.push({});
+    scopes.push( { Scope{} } );
+    ret_addr.push(ip);
+    ip = g->labels.at(func->label);
+
+    int argsize = reversed_args.size();
+    for (int i=0; i< (int)func->arg_N; i++) {
+        // argsize - i - 1
+        int idx = argsize - i - 1;
+        if (idx < 0) {
+            stacks.top().push(
+                std::shared_ptr<Value>( new LuaValue::Nil )
+            );
+        } else {
+            stacks.top().push(
+                reversed_args[idx]
+            );
+        }
+    }
+    auto varg = std::make_shared<LuaValue::Table>();
+    if (argsize > (int)func->arg_N) {
+        int diff = argsize - func->arg_N;
+        for (int i=0; i<diff; i++) {
+            // argsize - N - i - 1
+            int idx = diff - i - 1;
+            varg->set(i, reversed_args[idx]);
+        }
+    }
+    scopes.top().back().set(func->varg, varg);
+}
+
 void Executioner::raw_call(
     std::shared_ptr<LuaValue::Function> func,
     std::vector< std::shared_ptr<Value> > & reversed_args,
@@ -860,27 +928,34 @@ void Executioner::raw_call(
     #ifdef INTERPRETER_DEBUG
     std::cout << "[" << std::endl;
     std::cout << "raw_call" << std::endl;
+    size_t i = 0;
     for (auto it = reversed_args.rbegin(); it != reversed_args.rend(); it++) {
-        std::cout << *it << " " << type_of(*it) << std::endl;
+        std::cout << i << ": " << *it << " " << type_of(*it) << std::endl;
+        i++;
     }
     std::cout << "]" << std::endl;
     #endif
 
     if (func->func) {
+        // dont put pcall on callstack
         if (g->cxx_funcnames.contains(func->func)) {
             callstack.push( g->cxx_funcnames.at(func->func) );
         } else {
             callstack.push( func->key() );
         }
+
         // built-in function
         std::reverse(reversed_args.begin(), reversed_args.end());
         auto result = func->func(this, reversed_args);
 
         if (result.empty()) {
-            // for coroutine compliance
+            // for coroutine & pcall compliance
+            // functions that dont put anything on stack right away
             if (
+                func->func != &LuaLibs::Error::pcall &&
                 func->func != &LuaLibs::Coroutine::resume &&
-                func->func != &LuaLibs::Coroutine::yield
+                func->func != &LuaLibs::Coroutine::yield &&
+                true
             ) {
                  result.push_back( std::make_shared<LuaValue::Nil>() );
             }
@@ -902,39 +977,11 @@ void Executioner::raw_call(
             }
         }
 
-        callstack.pop( );
+        if (func->func != &LuaLibs::Error::pcall) {
+            callstack.pop( );
+        }
     } else {
-        callstack.push(func->label);
-        to_return.push(return_size);
-        // stacks.push({});
-        scopes.push( { Scope{} } );
-        ret_addr.push(ip);
-        ip = g->labels.at(func->label);
-
-        int argsize = reversed_args.size();
-        for (int i=0; i< (int)func->arg_N; i++) {
-            // argsize - i - 1
-            int idx = argsize - i - 1;
-            if (idx < 0) {
-                stacks.top().push(
-                    std::shared_ptr<Value>( new LuaValue::Nil )
-                );
-            } else {
-                stacks.top().push(
-                    reversed_args[idx]
-                );
-            }
-        }
-        auto varg = std::make_shared<LuaValue::Table>();
-        if (argsize > (int)func->arg_N) {
-            int diff = argsize - func->arg_N;
-            for (int i=0; i<diff; i++) {
-                // argsize - N - i - 1
-                int idx = diff - i - 1;
-                varg->set(i, reversed_args[idx]);
-            }
-        }
-        scopes.top().back().set(func->varg, varg);
+        raw_lua_call(func, reversed_args, return_size);
     }
 }
 
@@ -1048,15 +1095,19 @@ void Executioner::RET(Instruction *inst) {
         return;
     }
     callstack.pop();
+    if (g->cxx_funcnames.contains( &LuaLibs::Error::pcall )) {
+        auto pcall_name = g->cxx_funcnames.at(&LuaLibs::Error::pcall);
+        if (callstack.top() == pcall_name) {
+            // return out of pcall
+
+            callstack.pop();
+
+            // success
+            values.push_back( std::make_shared<LuaValue::Boolean>(true) );
+        }
+    }
     scopes.pop();
     ip = ret_addr.top(); ret_addr.pop();
-    // if (!catches.empty()) {
-    //     if (ip == catches.top().ip) {
-    //         // return out of success pcall
-    //         catches.pop();
-    //         values.push_back( std::make_shared<LuaValue::Boolean>(true) );
-    //     }
-    // }
 
     // v_1 ... v_n
     std::reverse(values.begin(), values.end());
@@ -1131,6 +1182,7 @@ void Executioner::PUT_BARRIER(Instruction *inst) {
 void Executioner::POP_BARRIER(Instruction *inst) {
     auto &top = stacks.top();
     while (!is_barrier(top)) {
+        std::cout << "WARNING: POP_BARRIER had to pop a value!" << std::endl;
         top.pop();
     }
     top.pop();

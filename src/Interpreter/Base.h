@@ -1,6 +1,8 @@
 #ifndef INTERPRETER_BASE_H
 #define INTERPRETER_BASE_H
 
+// #define INTERPRETER_DEBUG
+
 #include <memory>
 #include <unordered_map>
 #include <string>
