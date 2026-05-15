@@ -268,7 +268,7 @@ std::vector<std::shared_ptr<Value>> Os::rename(Executioner* exec, std::vector<st
     }
     int err = errno;
     return {
-        std::make_shared<Nil>(),
+        std::make_shared<Boolean>(false),
         std::make_shared<String>(oldn + " -> " + newn + ": " + std::strerror(err)),
         std::make_shared<Number>((std::int64_t) err)
     };
