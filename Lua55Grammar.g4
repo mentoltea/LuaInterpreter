@@ -171,7 +171,7 @@ paramlist: namelist (',' vararg)? | vararg ;
 vararg: '...' name? ;
 namelist: name (',' name)* ;
 
-args: '(' explist? ')' ;
+args: '(' explist? ')' | STRING ;
 
 fieldlist: field (field_sep field)* field_sep? ;
 field_sep: ',' | ';' ;
@@ -249,7 +249,9 @@ GLOBAL: 'global' ;
 CONST: 'const' ;
 
 NUMBER: (MINUS_SIGN)? [0-9]+ ('.' [0-9]+)? ;
-STRING: '"' ( '\\"' | ~["\r\n] )* '"' ;
+STRING
+    : '"' ( '\\' . | ~["\\\r\n] )* '"'
+    ;
 // UNTERMINATED_STRING: '"' ( '\\"' | ~["\r\n] )* 
 //     { 
 //         throw new RuntimeException("Syntax error: unterminated string at line " + getLine());
